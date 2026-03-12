@@ -6,24 +6,6 @@ from openai import OpenAI
 from pathlib import Path
 import streamlit as st
 
-# 비밀번호 게이트
-def check_password():
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-
-    if not st.session_state["authenticated"]:
-        st.title("🔐 HAZOP AI 분석 도구")
-        pw = st.text_input("비밀번호를 입력하세요", type="password")
-        if st.button("확인"):
-            if pw == st.secrets["APP_PASSWORD"]:
-                st.session_state["authenticated"] = True
-                st.rerun()
-            else:
-                st.error("비밀번호가 틀렸습니다.")
-        st.stop()
-
-check_password()
-
 st.set_page_config(page_title="HAZOP AI Program", layout="wide")
 
 def is_openai_available():
@@ -712,4 +694,5 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
