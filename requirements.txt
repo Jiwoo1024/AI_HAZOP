@@ -1,7 +1,3 @@
-.streamlit/secrets.toml
-__pycache__/
-*.pyc
-*.pkl
-*.faiss
-*.index
-.env
+streamlit
+openai
+pandas
