@@ -241,7 +241,7 @@ def search_db(index, chunks, query, k=5):
 # ✅ 사이드바
 st.sidebar.header("분석 설정")
 process_name = st.sidebar.text_input("대상 공정", value="에틸렌 저장탱크 공정")
-analysis_method = st.sidebar.text_input("분석 기법", value="HAZOP Lite")
+analysis_method = st.sidebar.text_input("분석 기법", value="HAZOP")
 selected_node = st.sidebar.selectbox("단일 편차 분석 Node 선택", list(hazop_db.keys()), key="sidebar_node_select")
 # ✅ 세션 초기화
 if "data" not in st.session_state:
@@ -712,3 +712,4 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
