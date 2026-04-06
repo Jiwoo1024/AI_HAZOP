@@ -311,12 +311,26 @@ st.markdown("""
     color: #FFFFFF !important;
 }
 
-/* 커서 올리면 SK 빨간 줄 표시 */
-[data-testid="stSidebar"] .stSelectbox:hover,
-[data-testid="stSidebar"] .stTextInput:hover {
+/* 커서 올리면 박스에만 SK 빨간 줄 */
+[data-testid="stSidebar"] .stSelectbox > div:hover,
+[data-testid="stSidebar"] .stTextInput > div:hover {
     border-left: 3px solid #E8192C !important;
     padding-left: 8px;
     transition: all 0.2s ease;
+}
+
+/* 드롭다운 옵션 팝업 */
+[data-testid="stSelectboxVirtualDropdown"] {
+    background-color: #000000 !important;
+    color: #FFFFFF !important;
+}
+
+[data-testid="stSelectboxVirtualDropdown"] li {
+    color: #FFFFFF !important;
+}
+
+[data-testid="stSelectboxVirtualDropdown"] li:hover {
+    background-color: #E8192C !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -728,6 +742,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
