@@ -291,6 +291,36 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<style>
+/* 사이드바 배경 검정 */
+[data-testid="stSidebar"] {
+    background-color: #000000;
+}
+
+/* 사이드바 글씨 흰색 */
+[data-testid="stSidebar"] * {
+    color: #FFFFFF !important;
+}
+
+/* 사이드바 입력창 */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] .stSelectbox > div {
+    background-color: #1A1A1A !important;
+    border: 1px solid #333333 !important;
+    color: #FFFFFF !important;
+}
+
+/* 커서 올리면 SK 빨간 줄 표시 */
+[data-testid="stSidebar"] .stSelectbox:hover,
+[data-testid="stSidebar"] .stTextInput:hover {
+    border-left: 3px solid #E8192C !important;
+    padding-left: 8px;
+    transition: all 0.2s ease;
+}
+</style>
+""", unsafe_allow_html=True)
+
 if client is None:
     st.warning("현재 OpenAI API 키가 설정되지 않아 AI 추천 기능은 데모 모드로 표시됩니다.")
 else:
@@ -698,6 +728,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
