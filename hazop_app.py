@@ -304,6 +304,7 @@ st.markdown("""
 }
 
 /* 사이드바 입력창 */
+/* 사이드바 입력창 */
 [data-testid="stSidebar"] input,
 [data-testid="stSidebar"] .stSelectbox > div,
 [data-testid="stSidebar"] .stSelectbox > div > div,
@@ -313,34 +314,17 @@ st.markdown("""
     border: 1px solid #333333 !important;
     color: #FFFFFF !important;
 }
-[data-testid="stSidebar"] .stSelectbox > div:focus-within {
-    background-color: #1A1A1A !important;
-    border: 1px solid #333333 !important;
-}
+
 [data-testid="stSidebar"] [data-baseweb="select"] * {
     color: #FFFFFF !important;
     background-color: #1A1A1A !important;
 }
-[data-testid="stSidebar"] [data-baseweb="select"] [aria-selected="true"],
+
+[data-testid="stSidebar"] .stSelectbox > div:focus-within,
 [data-testid="stSidebar"] [data-baseweb="select"] div:focus,
 [data-testid="stSidebar"] [data-baseweb="select"] div:active {
     background-color: #1A1A1A !important;
-}
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] .stSelectbox > div {
-    background-color: #1A1A1A !important;
     border: 1px solid #333333 !important;
-    color: #FFFFFF !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox input {
-    background-color: #1A1A1A !important;
-    color: #FFFFFF !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] input {
-    color: #FFFFFF !important;
-    background-color: #1A1A1A !important;
 }
 
 /* 커서 올리면 박스에만 빨간 줄 */
@@ -774,6 +758,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
