@@ -311,11 +311,17 @@ st.markdown("""
     color: #FFFFFF !important;
 }
 
-[data-testid="stSidebar"] .stSelectbox span {
+[data-testid="stSidebar"] .stSelectbox input {
+    background-color: #1A1A1A !important;
     color: #FFFFFF !important;
 }
 
-/* 커서 올리면 박스에만 SK 빨간 줄 */
+[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] input {
+    color: #FFFFFF !important;
+    background-color: #1A1A1A !important;
+}
+
+/* 커서 올리면 박스에만 빨간 줄 */
 [data-testid="stSidebar"] .stSelectbox > div:hover,
 [data-testid="stSidebar"] .stTextInput > div:hover {
     border-left: 3px solid #E8192C !important;
@@ -746,6 +752,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
