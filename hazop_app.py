@@ -313,7 +313,10 @@ st.markdown("""
     border: 1px solid #333333 !important;
     color: #FFFFFF !important;
 }
-
+[data-testid="stSidebar"] .stSelectbox > div:focus-within {
+    background-color: #1A1A1A !important;
+    border: 1px solid #333333 !important;
+}
 [data-testid="stSidebar"] [data-baseweb="select"] * {
     color: #FFFFFF !important;
     background-color: #1A1A1A !important;
@@ -771,6 +774,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
