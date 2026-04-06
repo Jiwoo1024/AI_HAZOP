@@ -311,6 +311,10 @@ st.markdown("""
     color: #FFFFFF !important;
 }
 
+[data-testid="stSidebar"] .stSelectbox span {
+    color: #FFFFFF !important;
+}
+
 /* 커서 올리면 박스에만 SK 빨간 줄 */
 [data-testid="stSidebar"] .stSelectbox > div:hover,
 [data-testid="stSidebar"] .stTextInput > div:hover {
