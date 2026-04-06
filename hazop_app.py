@@ -235,7 +235,7 @@ st.markdown("""
 .header {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #EA0029 0%, #C0001F 100%);
+    background: linear-gradient(135deg, #E8192C 0%, #F47920 100%);
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
