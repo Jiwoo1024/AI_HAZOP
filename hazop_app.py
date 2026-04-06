@@ -270,10 +270,11 @@ section.main > div {
 }
 
 .card {
-    background-color: #f8f9fc;
+    background-color: #FFFFFF;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #e1e4eb;
+    border: 1px solid #E8192C;
+    border-left: 4px solid #E8192C;
 }
 </style>
 """, unsafe_allow_html=True)
