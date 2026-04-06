@@ -276,7 +276,7 @@ section.main > div {
     background-color: #FFFFFF;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #E8192C;
+    border: 1px solid #F5F5F5;
     border-left: 4px solid #E8192C;
 }
 </style>
@@ -698,5 +698,6 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
