@@ -5,6 +5,7 @@ import numpy as np
 from openai import OpenAI
 from pathlib import Path
 import streamlit as st
+import os
 
 st.set_page_config(page_title="HAZOP AI Program", layout="wide")
 
