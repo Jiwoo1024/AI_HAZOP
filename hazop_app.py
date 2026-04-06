@@ -172,16 +172,18 @@ for node in hazop_db:
         }
 
 # ✅ FAISS DB 불러오기
-law_index = faiss.read_index("law_faiss.index")
-with open("law_chunks.pkl", "rb") as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+law_index = faiss.read_index(os.path.join(BASE_DIR, "law_faiss.index"))
+with open(os.path.join(BASE_DIR, "law_chunks.pkl"), "rb") as f:
     law_chunks = pickle.load(f)
 
-guide_index = faiss.read_index("index.faiss")
-with open("index.pkl", "rb") as f:
+guide_index = faiss.read_index(os.path.join(BASE_DIR, "index.faiss"))
+with open(os.path.join(BASE_DIR, "index.pkl"), "rb") as f:
     guide_chunks = pickle.load(f)
 
-handbook_index = faiss.read_index("handbook_index.faiss")
-with open("handbook_chunks.pkl", "rb") as f:
+handbook_index = faiss.read_index(os.path.join(BASE_DIR, "handbook_index.faiss"))
+with open(os.path.join(BASE_DIR, "handbook_chunks.pkl"), "rb") as f:
     handbook_chunks = pickle.load(f)
 
 # ✅ 검색 함수 (KOSHA 출처만 우선적으로 필터링)
