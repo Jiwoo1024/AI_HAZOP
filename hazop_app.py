@@ -238,7 +238,7 @@ st.markdown("""
 .header {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #E8192C 0%, #F47920 100%);
+    background-color: #000000;
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -758,6 +758,7 @@ Node: {node_ai}
 else:
 
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+
 
 
 
