@@ -459,7 +459,7 @@ accident_cases = {
 }
 
 # ✅ AI 개선 Safeguard 생성 함수
-def generate_ai_safeguard(deviation, guide_results, law_results, accident_results_str=None):
+def generate_ai_safeguard(node, deviation, deviation_data, guide_results, law_results, accident_results_str=None):
     if client is None:
         return """
 ### AI 기능 안내
@@ -472,16 +472,22 @@ def generate_ai_safeguard(deviation, guide_results, law_results, accident_result
 - 사고사례 및 참고 DB 연계 구조
 """
 
-    prompt = f"""
+prompt = f"""
 당신은 산업안전 컨설턴트입니다.
 
-아래 Deviation에 대해 다음 항목을 각각 작성하세요:
+[분석 대상]
+- 공정: 에틸렌 저장탱크 ({node})
+- Deviation: {deviation}
+- 원인: {deviation_data['원인']}
+- 결과: {deviation_data['결과']}
+- 현재 안전조치: {deviation_data['현재 안전조치']}
+- DB 권고 개선조치: {deviation_data['개선 조치']}
+
+위 내용을 바탕으로 아래 항목을 작성하세요:
 
 1. KOSHA 가이드 기준의 기본 개선 권고사항 2가지
 2. 산업안전보건법 등 법령에 근거한 필수 안전조치 및 관련 조문 2가지
 3. 관련 사고사례
-
-Deviation: {deviation}
 
 참고 Guide:
 {guide_results}
@@ -540,7 +546,9 @@ with col2:
 
         with st.spinner("AI가 개선권고사항 생성 중..."):
             st.session_state["gpt_output_single"] = generate_ai_safeguard(
+                selected_node,
                 selected_deviation,
+                hazop_db[selected_node][selected_deviation],
                 guide_results_str,
                 law_results_str,
                 accident_results_str
