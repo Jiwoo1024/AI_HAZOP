@@ -464,7 +464,6 @@ def generate_ai_safeguard(node, deviation, deviation_data, guide_results, law_re
         return """
 ### AI 기능 안내
 현재 API 키가 설정되지 않아 AI 개선권고사항 생성 기능은 비활성화되어 있습니다.
-
 대신 본 앱에서는 다음 기능을 확인할 수 있습니다.
 - 단일 편차 HAZOP 분석
 - 위험도 평가
@@ -472,9 +471,8 @@ def generate_ai_safeguard(node, deviation, deviation_data, guide_results, law_re
 - 사고사례 및 참고 DB 연계 구조
 """
 
-prompt = f"""
+    prompt = f"""
 당신은 산업안전 컨설턴트입니다.
-
 [분석 대상]
 - 공정: 에틸렌 저장탱크 ({node})
 - Deviation: {deviation}
@@ -482,19 +480,14 @@ prompt = f"""
 - 결과: {deviation_data['결과']}
 - 현재 안전조치: {deviation_data['현재 안전조치']}
 - DB 권고 개선조치: {deviation_data['개선 조치']}
-
 위 내용을 바탕으로 아래 항목을 작성하세요:
-
 1. KOSHA 가이드 기준의 기본 개선 권고사항 2가지
 2. 산업안전보건법 등 법령에 근거한 필수 안전조치 및 관련 조문 2가지
 3. 관련 사고사례
-
 참고 Guide:
 {guide_results}
-
 참고 Law:
 {law_results}
-
 참고 사고사례:
 {accident_results_str if accident_results_str else "없음"}
 """
