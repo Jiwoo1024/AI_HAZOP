@@ -284,20 +284,20 @@ selected_node = st.sidebar.selectbox("단일 편차 분석 Node 선택", list(ha
 if "data" not in st.session_state:
     st.session_state["data"] = []
 
-# ✅ 페이지 제목 표시 — SK hynix Newsroom 스타일 (다크 + 퍼플 포인트)
+# ✅ 페이지 제목 표시 — 중립 다크 테마 (특정 회사 CI에 치우치지 않는 톤)
 st.markdown("""
 <style>
 :root {
-    --bg-page: #131316;
-    --bg-nav: #000000;
-    --bg-card: #1C1C21;
-    --bg-card-alt: #232329;
-    --accent: #8B5CF6;
-    --accent-dark: #6D3FD1;
-    --accent-soft: rgba(139,92,246,0.14);
-    --text-primary: #F2F2F5;
-    --text-secondary: #9C9CA8;
-    --border: #2C2C34;
+    --bg-page: #14161A;
+    --bg-nav: #0B0C0F;
+    --bg-card: #1E2126;
+    --bg-card-alt: #262A31;
+    --accent: #22D3EE;
+    --accent-dark: #0EA5C4;
+    --accent-soft: rgba(34,211,238,0.14);
+    --text-primary: #F2F3F5;
+    --text-secondary: #9AA0A8;
+    --border: #33373E;
 }
 
 /* ── 전체 앱 배경 다크화 ───────────────────────── */
@@ -342,7 +342,7 @@ st.markdown("""
 </style>
 
 <div class="header">
-<h1>SK HYNIX <span style="color:var(--accent);">HAZOP</span> AI</h1>
+<h1>AI-Based <span style="color:var(--accent);">HAZOP</span> Safety Analysis Tool</h1>
 <p>Process Hazard Analysis with AI-based Safeguard Recommendation</p>
 </div>
 """, unsafe_allow_html=True)
@@ -416,19 +416,53 @@ section.main > div {
 }
 
 /* ── 선택박스 / 입력창 ────────────────────────── */
-div[data-baseweb="select"] > div,
+/* BaseWeb select는 내부에 div가 여러 겹 중첩돼 있어서, 자식(>) 대신
+   후손 선택자로 모든 depth의 배경/글자색을 강제 통일한다. */
+div[data-baseweb="select"] {
+    background-color: var(--bg-card-alt) !important;
+    border-radius: 8px !important;
+}
+div[data-baseweb="select"] > div {
+    background-color: var(--bg-card-alt) !important;
+    border-color: var(--border) !important;
+}
+div[data-baseweb="select"] div,
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] input {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+}
+div[data-baseweb="select"] svg { fill: var(--text-secondary) !important; }
+
 .stTextInput input,
-.stTextArea textarea {
+.stTextArea textarea,
+.stNumberInput input {
     border-radius: 8px !important;
     border-color: var(--border) !important;
     background-color: var(--bg-card-alt) !important;
     color: var(--text-primary) !important;
 }
-div[data-baseweb="select"] svg { fill: var(--text-secondary) !important; }
-ul[role="listbox"] {
+
+/* 드롭다운 옵션 목록은 body 하위 별도 레이어(포탈)로 렌더링되므로 전역 선택자로 처리 */
+ul[role="listbox"], div[data-baseweb="popover"] {
     background-color: var(--bg-card-alt) !important;
 }
-ul[role="listbox"] li {
+ul[role="listbox"] li, ul[role="listbox"] li * {
+    background-color: var(--bg-card-alt) !important;
+    color: var(--text-primary) !important;
+}
+ul[role="listbox"] li:hover {
+    background-color: var(--bg-card) !important;
+}
+
+/* ── 알림 배너 (st.info / st.warning / st.success 등 공통) ──── */
+div[data-testid="stAlert"] {
+    background-color: var(--bg-card-alt) !important;
+    border: 1px solid var(--border) !important;
+}
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] div {
     color: var(--text-primary) !important;
 }
 
@@ -442,6 +476,15 @@ div[data-testid="stExpander"] {
     border: 1px solid var(--border);
     border-radius: 10px;
     background-color: var(--bg-card);
+}
+div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary p,
+div[data-testid="stExpander"] summary span,
+.streamlit-expanderHeader {
+    color: var(--text-primary) !important;
+}
+div[data-testid="stExpander"] summary svg {
+    fill: var(--text-primary) !important;
 }
 
 /* AI 결과 내부 markdown 헤더가 너무 커서 스크롤이 과해지는 것 방지 */
