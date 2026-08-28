@@ -415,26 +415,135 @@ h2, h3 {
 }
 hr {
     margin: 1.6rem 0;
+    border: none;
+    border-top: 1px solid #ece8e6;
+}
+
+/* ── 모던 섹션 타이틀 (STEP n 뱃지 + 큰 제목) ──── */
+.section-title { margin: 2.4rem 0 1.2rem; }
+.section-title .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #EA0029;
+    background: rgba(234,0,41,0.08);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+}
+.section-title .title {
+    margin: 8px 0 0;
+    font-size: 25px;
+    font-weight: 800;
+    color: #1a1a1a;
+    letter-spacing: -0.01em;
+}
+
+/* ── 서브섹션 타이틀 (카드 안쪽 소제목) ─────────── */
+.subsection-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #262626;
+    margin: 0 0 14px;
+    padding-bottom: 9px;
+    border-bottom: 2px solid #EA0029;
+    display: block;
+}
+.minor-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6b7280;
+    letter-spacing: 0.02em;
+    margin: 0.4em 0 0.5em;
+}
+
+/* ── 커스텀 상태 배너 (API 키 안내) ──────────────── */
+.status-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.status-banner.ok { background: #eef7ee; color: #1e6b2f; border: 1px solid #cfe8cf; }
+.status-banner.warn { background: #fff6e6; color: #8a5a00; border: 1px solid #f5dfa8; }
+
+/* ── 컬럼을 카드처럼 (모던 대시보드 룩) ──────────── */
+div[data-testid="column"] {
+    background: #ffffff;
+    border: 1px solid #ece8e6;
+    border-radius: 14px;
+    padding: 22px 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+/* 중첩된 컬럼(예: 빈도·강도 기준표)은 카드 느낌을 낮춰서 이중 테두리 과함 방지 */
+div[data-testid="column"] div[data-testid="column"] {
+    background: #fafafa;
+    border: 1px solid #f0ede9;
+    box-shadow: none;
+    padding: 16px 18px;
+}
+
+/* ── 사이드바 ─────────────────────────────────── */
+section[data-testid="stSidebar"] {
+    background: #fafafa;
+    border-right: 1px solid #ece8e6;
+}
+section[data-testid="stSidebar"] h2 {
+    font-size: 15px;
+    font-weight: 800;
+    color: #EA0029;
+    letter-spacing: 0.02em;
 }
 </style>
 """, unsafe_allow_html=True)
 
+
+def render_section(eyebrow, title):
+    """모던 홈페이지 스타일의 섹션 대제목 (STEP n 뱃지 + 큰 타이틀)."""
+    st.markdown(
+        f'<div class="section-title"><span class="eyebrow">{eyebrow}</span>'
+        f'<div class="title">{title}</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_subsection(title):
+    """카드 안쪽에 쓰는 소제목 (밑줄 강조)."""
+    st.markdown(f'<div class="subsection-title">{title}</div>', unsafe_allow_html=True)
+
+
+def render_minor_title(title):
+    """참고표/보조 정보용 아주 작은 타이틀."""
+    st.markdown(f'<div class="minor-title">{title}</div>', unsafe_allow_html=True)
+
+
 if client is None:
-    st.warning("현재 OpenAI API 키가 설정되지 않아 AI 추천 기능은 데모 모드로 표시됩니다.")
+    st.markdown(
+        '<div class="status-banner warn">⚠️ 현재 OpenAI API 키가 설정되지 않아 AI 추천 기능은 데모 모드로 표시됩니다.</div>',
+        unsafe_allow_html=True,
+    )
 else:
-    st.info("OpenAI API 키가 설정되었습니다. 실제 유효성은 AI 실행 시 검증됩니다.")
+    st.markdown(
+        '<div class="status-banner ok">✅ OpenAI API 키가 설정되었습니다. 실제 유효성은 AI 실행 시 검증됩니다.</div>',
+        unsafe_allow_html=True,
+    )
 
 st.caption("저장탱크 공정을 대상으로 단일·복합 편차를 분석하고, 위험도 평가 및 AI 기반 개선권고사항 도출 구조를 구현한 HAZOP 프로그램")
 
 # ✅ ------------------- 메인 2-Column UI -------------------
-st.markdown("## 1) AI 단일 편차 HAZOP 분석")
+render_section("STEP 1", "AI 단일 편차 HAZOP 분석")
 
 # ✅ 2-Column UI 시작
 col1, col2 = st.columns([1, 1], gap="large")
 
 # ✅ [왼쪽] – Cause/Consequence + 현재조치 + 현재 위험도 평가
 with col1:
-    st.subheader("현재 위험도 평가")
+    render_subsection("📊 현재 위험도 평가")
 
     # ✅ 편차 선택
     selected_deviation = st.selectbox(
@@ -493,7 +602,7 @@ with col1:
     freq_col, matrix_col = st.columns([3, 5])
 
     with freq_col:
-        st.markdown("#### 빈도·강도 설정 기준")
+        render_minor_title("빈도·강도 설정 기준")
         st.markdown("""
 - **빈도 (1~5)**  
 1 = 극히 드뭄  
@@ -510,7 +619,7 @@ with col1:
 """)
 
     with matrix_col:
-        st.markdown("#### 위험도 결정 기준")
+        render_minor_title("위험도 결정 기준")
         st.markdown("""
 | 점수 범위 | 위험도 등급 | 허용 여부 | 조치 권고사항 |
 |-----------|-------------|-----------|----------------|
@@ -633,7 +742,7 @@ if "gpt_output_single" not in st.session_state:
     st.session_state["gpt_output_single"] = ""
 
 with col2:
-    st.subheader("AI 활용 개선권고사항")
+    render_subsection("🤖 AI 활용 개선권고사항")
 
     manual_safeguard = st.text_area(
         "관리자 개선권고 입력",
@@ -709,10 +818,10 @@ with col2:
             st.info("아직 AI 분석 결과가 없습니다.")
 
     if manual_safeguard.strip():
-        st.markdown("#### 관리자 입력 개선권고사항")
+        render_minor_title("관리자 입력 개선권고사항")
         st.markdown(f'<div class="card">{manual_safeguard}</div>', unsafe_allow_html=True)
 
-    st.markdown("### 개선 후 위험도 평가")
+    render_subsection("✅ 개선 후 위험도 평가")
 
     freq_after = st.selectbox("개선 후 발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_after_col2")
     sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
@@ -813,7 +922,7 @@ def is_invalid_combination(devs, node):
 # 6. 복합 Deviation 분석 (핸드북 우선 적용 버전)
 # ==========================================
 st.markdown("---")
-st.markdown("## 2) AI 복합 편차 HAZOP 분석")
+render_section("STEP 2", "AI 복합 편차 HAZOP 분석")
 
 # ✅ 사이드바에서 노드 선택
 node_ai = st.sidebar.selectbox("AI 복합 편차 분석 Node 선택", ["Node1", "Node2"], key="node_sidebar_ai")
@@ -894,7 +1003,7 @@ Node: {node_ai}
 {reference_data}
 """
 
-            st.markdown("### AI 복합 편차 HAZOP 분석 결과")
+            render_subsection("📄 AI 복합 편차 HAZOP 분석 결과")
 
             try:
                 if client is None:
