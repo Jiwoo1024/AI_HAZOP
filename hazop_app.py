@@ -292,9 +292,10 @@ st.markdown("""
     --bg-nav: #0B0C0F;
     --bg-card: #1E2126;
     --bg-card-alt: #262A31;
-    --accent: #22D3EE;
-    --accent-dark: #0EA5C4;
-    --accent-soft: rgba(34,211,238,0.14);
+    --accent: #A5B4FC;
+    --accent-dark: #8B98F0;
+    --accent-soft: rgba(165,180,252,0.14);
+    --on-accent: #1E2126;
     --text-primary: #F2F3F5;
     --text-secondary: #9AA0A8;
     --border: #33373E;
@@ -406,13 +407,14 @@ section.main > div {
 .stButton > button[kind="primary"],
 .stButton > button:not([kind]) {
     background-color: var(--accent);
-    color: white;
+    color: var(--on-accent);
+    font-weight: 700;
     border-color: var(--accent);
 }
 .stButton > button:hover {
     background-color: var(--accent-dark);
     border-color: var(--accent-dark);
-    color: white;
+    color: var(--on-accent);
 }
 
 /* ── 선택박스 / 입력창 ────────────────────────── */
@@ -532,7 +534,7 @@ hr {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
-    color: #ffffff;
+    color: var(--on-accent);
     background: var(--accent);
     padding: 5px 14px;
     border-radius: 6px;
