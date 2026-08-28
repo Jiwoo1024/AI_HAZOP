@@ -284,37 +284,65 @@ selected_node = st.sidebar.selectbox("단일 편차 분석 Node 선택", list(ha
 if "data" not in st.session_state:
     st.session_state["data"] = []
 
-# ✅ 페이지 제목 표시
+# ✅ 페이지 제목 표시 — SK hynix Newsroom 스타일 (다크 + 퍼플 포인트)
 st.markdown("""
 <style>
+:root {
+    --bg-page: #131316;
+    --bg-nav: #000000;
+    --bg-card: #1C1C21;
+    --bg-card-alt: #232329;
+    --accent: #8B5CF6;
+    --accent-dark: #6D3FD1;
+    --accent-soft: rgba(139,92,246,0.14);
+    --text-primary: #F2F2F5;
+    --text-secondary: #9C9CA8;
+    --border: #2C2C34;
+}
+
+/* ── 전체 앱 배경 다크화 ───────────────────────── */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
+    background-color: var(--bg-page) !important;
+}
+[data-testid="stHeader"] { background-color: transparent !important; }
+
+.stApp, .stApp p, .stApp span, .stApp label, .stApp li,
+.stMarkdown, .stCaption, div[data-testid="stCaptionContainer"] {
+    color: var(--text-primary);
+}
+.stCaption, div[data-testid="stCaptionContainer"] p {
+    color: var(--text-secondary) !important;
+}
+
+/* ── 상단 고정 헤더 (뉴스룸 블랙 내비 느낌) ─────── */
 .header {
     position: sticky;
     top: 0;
     z-index: 999;
-    background: linear-gradient(135deg, #EE1C25 0%, #FF6A00 100%);
-    padding: 22px 26px;
+    background: var(--bg-nav);
+    padding: 20px 26px;
     border-radius: 10px;
     margin-bottom: 22px;
-    box-shadow: 0 3px 10px rgba(238,28,37,0.25);
+    border-bottom: 3px solid var(--accent);
 }
 
 .header h1 {
-    color: white;
-    font-size: 28px;
+    color: #ffffff;
+    font-size: 26px;
     font-weight: 800;
     margin: 0;
     letter-spacing: -0.01em;
 }
 
 .header p {
-    color: rgba(255,255,255,0.88);
+    color: var(--text-secondary);
     font-size: 14px;
     margin: 6px 0 0 0;
 }
 </style>
 
 <div class="header">
-<h1>🛡️ AI-Based HAZOP Safety Analysis Tool</h1>
+<h1>SK HYNIX <span style="color:var(--accent);">HAZOP</span> AI</h1>
 <p>Process Hazard Analysis with AI-based Safeguard Recommendation</p>
 </div>
 """, unsafe_allow_html=True)
@@ -332,12 +360,12 @@ section.main > div {
 
 /* ── 카드 컨테이너 ─────────────────────────────── */
 .card {
-    background-color: #ffffff;
+    background-color: var(--bg-card);
     padding: 20px 22px;
     border-radius: 12px;
-    border: 1px solid #e5e2e0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    border: 1px solid var(--border);
     margin-bottom: 16px;
+    color: var(--text-primary);
 }
 
 /* 원인/결과/현재 안전조치 미니 카드 */
@@ -346,8 +374,8 @@ section.main > div {
     align-items: flex-start;
     gap: 10px;
     padding: 10px 14px;
-    border-left: 3px solid #EE1C25;
-    background-color: #fafafa;
+    border-left: 3px solid var(--accent);
+    background-color: var(--bg-card-alt);
     border-radius: 6px;
     margin-bottom: 8px;
 }
@@ -356,31 +384,34 @@ section.main > div {
     width: 84px;
     font-weight: 700;
     font-size: 13px;
-    color: #C81620;
+    color: var(--accent);
 }
 .fact-row .fact-value {
     font-size: 14px;
-    color: #262626;
+    color: var(--text-primary);
     line-height: 1.5;
 }
-.fact-row.safeguard { border-left-color: #6b7280; }
-.fact-row.safeguard .fact-label { color: #4b5563; }
+.fact-row.safeguard { border-left-color: var(--text-secondary); }
+.fact-row.safeguard .fact-label { color: var(--text-secondary); }
 
 /* ── 버튼 ─────────────────────────────────────── */
 .stButton > button {
     border-radius: 8px;
     font-weight: 600;
-    border: 1px solid #EE1C25;
+    border: 1px solid var(--accent);
+    background-color: transparent;
+    color: var(--accent);
     transition: all 0.15s ease;
 }
 .stButton > button[kind="primary"],
 .stButton > button:not([kind]) {
-    background-color: #EE1C25;
+    background-color: var(--accent);
     color: white;
+    border-color: var(--accent);
 }
 .stButton > button:hover {
-    background-color: #C81620;
-    border-color: #C81620;
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
     color: white;
 }
 
@@ -389,7 +420,16 @@ div[data-baseweb="select"] > div,
 .stTextInput input,
 .stTextArea textarea {
     border-radius: 8px !important;
-    border-color: #ddd6d3 !important;
+    border-color: var(--border) !important;
+    background-color: var(--bg-card-alt) !important;
+    color: var(--text-primary) !important;
+}
+div[data-baseweb="select"] svg { fill: var(--text-secondary) !important; }
+ul[role="listbox"] {
+    background-color: var(--bg-card-alt) !important;
+}
+ul[role="listbox"] li {
+    color: var(--text-primary) !important;
 }
 
 /* ── 확장영역(expander) ──────────────────────── */
@@ -399,44 +439,46 @@ div[data-baseweb="select"] > div,
     border-radius: 8px;
 }
 div[data-testid="stExpander"] {
-    border: 1px solid #e5e2e0;
+    border: 1px solid var(--border);
     border-radius: 10px;
+    background-color: var(--bg-card);
 }
 
 /* AI 결과 내부 markdown 헤더가 너무 커서 스크롤이 과해지는 것 방지 */
-div[data-testid="stExpander"] h1 { font-size: 20px !important; margin: 0.6em 0 0.3em !important; }
-div[data-testid="stExpander"] h2 { font-size: 17px !important; margin: 0.6em 0 0.3em !important; }
-div[data-testid="stExpander"] h3 { font-size: 15px !important; margin: 0.5em 0 0.2em !important; }
-div[data-testid="stExpander"] p, div[data-testid="stExpander"] li { font-size: 14px !important; line-height: 1.55 !important; }
+div[data-testid="stExpander"] h1 { font-size: 20px !important; margin: 0.6em 0 0.3em !important; color: var(--text-primary); }
+div[data-testid="stExpander"] h2 { font-size: 17px !important; margin: 0.6em 0 0.3em !important; color: var(--text-primary); }
+div[data-testid="stExpander"] h3 { font-size: 15px !important; margin: 0.5em 0 0.2em !important; color: var(--accent); }
+div[data-testid="stExpander"] p, div[data-testid="stExpander"] li { font-size: 14px !important; line-height: 1.55 !important; color: var(--text-primary); }
 
 /* ── 서브헤더 여백 ────────────────────────────── */
-h2, h3 {
+h1, h2, h3, h4 {
     letter-spacing: -0.01em;
+    color: var(--text-primary);
 }
 hr {
     margin: 1.6rem 0;
     border: none;
-    border-top: 1px solid #ece8e6;
+    border-top: 1px solid var(--border);
 }
 
-/* ── 모던 섹션 타이틀 (STEP n 뱃지 + 큰 제목) ──── */
+/* ── 모던 섹션 타이틀 (뉴스룸 필터탭 느낌의 뱃지 + 큰 제목) ──── */
 .section-title { margin: 2.4rem 0 1.2rem; }
 .section-title .eyebrow {
     display: inline-block;
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
-    color: #EE1C25;
-    background: rgba(234,0,41,0.08);
-    padding: 4px 12px;
-    border-radius: 999px;
-    margin-bottom: 10px;
+    color: #ffffff;
+    background: var(--accent);
+    padding: 5px 14px;
+    border-radius: 6px;
+    margin-bottom: 12px;
 }
 .section-title .title {
     margin: 8px 0 0;
-    font-size: 25px;
+    font-size: 26px;
     font-weight: 800;
-    color: #0F1B2E;
+    color: var(--text-primary);
     letter-spacing: -0.01em;
 }
 
@@ -444,16 +486,16 @@ hr {
 .subsection-title {
     font-size: 16px;
     font-weight: 700;
-    color: #262626;
+    color: var(--text-primary);
     margin: 0 0 14px;
     padding-bottom: 9px;
-    border-bottom: 2px solid #EE1C25;
+    border-bottom: 2px solid var(--accent);
     display: block;
 }
 .minor-title {
     font-size: 13px;
     font-weight: 700;
-    color: #6b7280;
+    color: var(--text-secondary);
     letter-spacing: 0.02em;
     margin: 0.4em 0 0.5em;
 }
@@ -468,36 +510,46 @@ hr {
     font-size: 13px;
     font-weight: 600;
     margin-bottom: 4px;
+    border: 1px solid var(--border);
 }
-.status-banner.ok { background: #eef7ee; color: #1e6b2f; border: 1px solid #cfe8cf; }
-.status-banner.warn { background: #fff6e6; color: #8a5a00; border: 1px solid #f5dfa8; }
+.status-banner.ok { background: var(--bg-card-alt); color: #4ADE80; }
+.status-banner.warn { background: var(--bg-card-alt); color: #FBBF24; }
 
-/* ── 컬럼을 카드처럼 (모던 대시보드 룩) ──────────── */
+/* ── 컬럼을 카드처럼 (뉴스룸 카드 그리드 느낌) ──────────── */
 div[data-testid="column"] {
-    background: #ffffff;
-    border: 1px solid #ece8e6;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 22px 24px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
 }
-/* 중첩된 컬럼(예: 빈도·강도 기준표)은 카드 느낌을 낮춰서 이중 테두리 과함 방지 */
+/* 중첩된 컬럼(예: 빈도·강도 기준표)은 톤을 살짝 낮춰서 이중 테두리 과함 방지 */
 div[data-testid="column"] div[data-testid="column"] {
-    background: #fafafa;
-    border: 1px solid #f0ede9;
-    box-shadow: none;
+    background: var(--bg-card-alt);
+    border: 1px solid var(--border);
     padding: 16px 18px;
 }
 
-/* ── 사이드바 ─────────────────────────────────── */
+/* 표(markdown table) 다크 대응 */
+.stApp table { color: var(--text-primary); border-color: var(--border); }
+.stApp table th { background-color: var(--bg-card-alt); }
+.stApp table td, .stApp table th { border-color: var(--border) !important; }
+
+/* ── 사이드바 (뉴스룸 블랙 내비 톤) ───────────────── */
 section[data-testid="stSidebar"] {
-    background: #fafafa;
-    border-right: 1px solid #ece8e6;
+    background: var(--bg-nav);
+    border-right: 1px solid var(--border);
 }
+section[data-testid="stSidebar"] * { color: var(--text-primary); }
 section[data-testid="stSidebar"] h2 {
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
-    color: #EE1C25;
-    letter-spacing: 0.02em;
+    color: var(--accent) !important;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -569,27 +621,27 @@ with col1:
     # ✅ 위험 등급 판정
     if risk_score <= 3:
         risk_level = "매우 낮음 (허용 가능)"
-        color = "green"
+        color = "#4ADE80"
     elif risk_score <= 6:
         risk_level = "낮음 (허용 가능)"
-        color = "blue"
+        color = "#60A5FA"
     elif risk_score == 8:
         risk_level = "보통 (허용 불가능)"
-        color = "orange"
+        color = "#FB923C"
     elif 9 <= risk_score <= 12:
         risk_level = "약간 높음 (허용 불가능)"
-        color = "darkorange"
+        color = "#F97316"
     elif risk_score == 15:
         risk_level = "높음 (허용 불가능)"
-        color = "red"
+        color = "#F87171"
     else:
         risk_level = "매우 높음 (허용 불가능)"
-        color = "darkred"
+        color = "#DC2626"
 
     # ✅ 현재 위험도 표시
     st.markdown(
         f"""<div class="card" style="border-left: 5px solid {color}; padding: 14px 18px; margin-top: 4px;">
-<div style="font-size:13px; color:#6b7280; font-weight:600;">현재 위험도 (빈도 {freq} × 강도 {sev})</div>
+<div style="font-size:13px; color:#9C9CA8; font-weight:600;">현재 위험도 (빈도 {freq} × 강도 {sev})</div>
 <div style="font-size:22px; font-weight:800; color:{color}; margin-top:2px;">{risk_score}점 &nbsp;→&nbsp; {risk_level}</div>
 </div>""",
         unsafe_allow_html=True
@@ -830,26 +882,26 @@ with col2:
 
     if risk_score_after <= 3:
         risk_level_after = "매우 낮음 (허용 가능)"
-        color_after = "green"
+        color_after = "#4ADE80"
     elif risk_score_after <= 6:
         risk_level_after = "낮음 (허용 가능)"
-        color_after = "blue"
+        color_after = "#60A5FA"
     elif risk_score_after == 8:
         risk_level_after = "보통 (허용 불가능)"
-        color_after = "orange"
+        color_after = "#FB923C"
     elif 9 <= risk_score_after <= 12:
         risk_level_after = "약간 높음 (허용 불가능)"
-        color_after = "darkorange"
+        color_after = "#F97316"
     elif risk_score_after == 15:
         risk_level_after = "높음 (허용 불가능)"
-        color_after = "red"
+        color_after = "#F87171"
     else:
         risk_level_after = "매우 높음 (허용 불가능)"
-        color_after = "darkred"
+        color_after = "#DC2626"
 
     st.markdown(
         f"""<div class="card" style="border-left: 5px solid {color_after}; padding: 14px 18px; margin-top: 4px;">
-<div style="font-size:13px; color:#6b7280; font-weight:600;">개선 후 위험도 (빈도 {freq_after} × 강도 {sev_after})</div>
+<div style="font-size:13px; color:#9C9CA8; font-weight:600;">개선 후 위험도 (빈도 {freq_after} × 강도 {sev_after})</div>
 <div style="font-size:22px; font-weight:800; color:{color_after}; margin-top:2px;">{risk_score_after}점 &nbsp;→&nbsp; {risk_level_after}</div>
 </div>""",
         unsafe_allow_html=True
