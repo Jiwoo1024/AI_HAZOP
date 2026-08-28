@@ -221,7 +221,7 @@ def search_db(index, chunks, query, k=5, source_filter=None):
                 entry = f"{content} (출처: {source})"
                 results.append(entry)
 
-        return results[:5]
+        return results[:8]
 
     except Exception as e:
         return [f"DB 검색 중 오류 발생: {e}"]
@@ -230,7 +230,7 @@ def search_db(index, chunks, query, k=5, source_filter=None):
 # ✅ 벡터 검색은 "유사한 단어"를 찾을 뿐, "이 편차에 실제로 적용되는가"는 판단하지 않는다.
 # 그래서 search_db()가 찾아온 후보를 AI에게 다시 보여주고, 이 편차의 원인/결과에 실질적으로
 # 관련 있는 것만 추리게 한다. 후보가 하나도 관련 없으면 억지로 채우지 않고 빈 리스트를 반환한다.
-def rerank_relevant(query, raw_results, limit=2):
+def rerank_relevant(query, raw_results, limit=3):
     if not raw_results or client is None:
         return raw_results[:limit]
     # search_db()가 에러/비활성 메시지를 반환한 경우 그대로 통과
@@ -239,8 +239,11 @@ def rerank_relevant(query, raw_results, limit=2):
 
     numbered = "\n".join(f"[{i+1}] {r[:400]}" for i, r in enumerate(raw_results))
     prompt = f"""아래는 '{query}' 라는 공정 편차(Deviation)와 관련해 벡터 검색으로 찾아온 후보 자료입니다.
-각 후보가 이 편차의 원인 또는 결과에 실질적으로 적용되는 내용인지 엄격하게 판단하십시오.
-단순히 같은 분야(안전, 화학물질 등)라는 이유로 관련 있다고 판단하지 마십시오.
+각 후보가 이 편차의 원인 또는 결과와 실질적으로 관련되어, 개선권고사항을 뒷받침하는 근거로
+쓸 수 있는지 판단하십시오. 완전히 동일한 설비명이 아니어도 같은 기능(예: 안전밸브/릴리프밸브/
+압력방출장치는 모두 과압 방지 설비로 동일 취급, Level Gauge와 액위계·레벨센서도 동일 취급)을
+하는 설비·조항이면 관련 있다고 판단하십시오. 다만 전혀 다른 주제(무관한 화학물질, 무관한 공정
+단계 등)까지 억지로 끼워맞추지는 마십시오.
 
 관련 있는 후보의 번호만 쉼표로 구분해 답하십시오. 관련 있는 게 하나도 없으면 "없음"이라고만 답하십시오.
 번호나 "없음" 외의 다른 설명은 절대 쓰지 마십시오.
@@ -400,6 +403,12 @@ div[data-testid="stExpander"] {
     border-radius: 10px;
 }
 
+/* AI 결과 내부 markdown 헤더가 너무 커서 스크롤이 과해지는 것 방지 */
+div[data-testid="stExpander"] h1 { font-size: 20px !important; margin: 0.6em 0 0.3em !important; }
+div[data-testid="stExpander"] h2 { font-size: 17px !important; margin: 0.6em 0 0.3em !important; }
+div[data-testid="stExpander"] h3 { font-size: 15px !important; margin: 0.5em 0 0.2em !important; }
+div[data-testid="stExpander"] p, div[data-testid="stExpander"] li { font-size: 14px !important; line-height: 1.55 !important; }
+
 /* ── 서브헤더 여백 ────────────────────────────── */
 h2, h3 {
     letter-spacing: -0.01em;
@@ -547,20 +556,27 @@ def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results
 
 [원칙 2] 법령은 편차 자체가 아니라, 당신이 위에서 작성한 "개별 개선권고사항"에
 실질적으로 대응하는 경우에만 붙이십시오. 즉 "이 개선권고를 시행해야 하는 근거가
-[참고 Law]에 있는가"를 개선권고마다 따로 판단하십시오. 이때 [참고 Law]의 출처 종류를
-반드시 구분해서 표기하십시오.
-- 한국 법령(산업안전보건법, 산업안전보건기준에 관한 규칙 등)에 대응되는 조문이 있으면:
-  "법적 근거: <법령명 조문번호> (국내 법적 의무사항)"
-- 해외 기준("OSHA"/"NFPA"가 출처에 포함된 자료)에 대응되는 조항이 있으면:
+아래 [참고 Guide]/[참고 Law]에 실제로 적혀 있는가"를 개선권고마다 따로 판단하십시오.
+
+**절대 규칙 (가장 중요): 법령명, 기준명(OSHA/NFPA 등), 조문·조항 번호는 반드시 아래
+[참고 Guide]와 [참고 Law]의 텍스트 안에 실제로 적혀 있는 것만 그대로 옮겨 쓰십시오.
+그 안에 없는 법령명/기준명/조항번호는 절대 언급하지도, 추측하지도, 지어내지도 마십시오.
+예를 들어 [참고 Guide]/[참고 Law]에 "NFPA"라는 단어가 전혀 없다면 NFPA를 언급하는 것
+자체가 금지입니다. "그럴듯하게 들리는" 조항번호를 만들어내는 것도 금지입니다.**
+
+이때 실제로 인용하는 자료의 출처 종류를 반드시 구분해서 표기하십시오.
+- 한국 법령(출처에 "산업안전보건법", "산업안전보건기준에 관한 규칙" 등이 포함된 자료)에
+  대응되는 조문이 있으면: "법적 근거: <법령명 조문번호> (국내 법적 의무사항)"
+- 해외 기준(출처에 "OSHA" 등 해외 기관/규격명이 포함된 자료)에 대응되는 조항이 있으면:
   "참고 기준: <출처 조항번호> (국제 기술기준 참고 — 한국 내 법적 강제력 없음, 모범사례로만 활용)"
   이라고 명시하여 한국 법령과 절대 같은 급으로 "법적 근거"라고 쓰지 마십시오.
 - MSDS(물질안전보건자료, 출처에 "MSDS"가 포함된 자료)에서 가져온 물성·유해성 수치
   (인화점, 폭발범위, 증기압 등)를 개선권고의 배경 설명에 쓸 경우: "참고자료: 에틸렌 MSDS"
   라고만 표기하고, 이것도 "법적 근거"나 "참고 기준"(국제기술기준)이 아니라 순수한
   물질 특성 데이터임을 구분하십시오.
-- 대응되는 조문/자료가 전혀 없으면: 억지로 끼워맞추지 말고 "법적 근거: 없음(업계 모범사례 기준)"이라고
-  명시하십시오. 근거 없이 조문번호를 지어내지 마십시오.
-- [참고 Law]에 있는 내용이라도 이 편차의 원인/결과와 실질적으로 무관하면 인용하지 마십시오.
+- 아래 [참고 Guide]/[참고 Law]가 비어있거나("없음" 표시) 대응되는 조문/자료가 전혀 없으면:
+  억지로 끼워맞추지 말고 "법적 근거: 없음(업계 모범사례 기준)"이라고만 명시하십시오.
+- [참고 Guide]/[참고 Law]에 있는 내용이라도 이 편차의 원인/결과와 실질적으로 무관하면 인용하지 마십시오.
 
 [원칙 3] 마지막에 관련 사고사례를 별도 항목으로 정리하십시오.
 
@@ -587,7 +603,27 @@ Deviation: {deviation}
                 {"role": "user", "content": prompt}
             ]
         )
-        return response.choices[0].message.content
+        answer = response.choices[0].message.content
+
+        # 안전장치: 프롬프트로 "DB에 없는 출처는 언급 금지"라고 지시해도 LLM이 가끔
+        # 그럴듯한 법령/기준명을 지어내는 경우가 있다. 실제로 검색된 참고자료(guide_results,
+        # law_results)에 전혀 등장하지 않는 출처명이 답변에 나오면, 화면에 경고를 붙여
+        # 사용자가 바로 알아볼 수 있게 한다.
+        combined_sources = f"{guide_results}\n{law_results}"
+        KNOWN_SOURCE_KEYWORDS = ["NFPA", "ISO", "ANSI", "API RP", "EN 1"]
+        hallucinated = [
+            kw for kw in KNOWN_SOURCE_KEYWORDS
+            if kw in answer and kw not in combined_sources
+        ]
+        if hallucinated:
+            warning = (
+                f"\n\n---\n⚠️ **주의**: 위 답변에 {', '.join(hallucinated)} 관련 언급이 있으나, "
+                "실제로 검색된 참고자료(DB)에는 해당 출처가 없습니다. AI가 잘못 생성했을 가능성이 "
+                "높으니 이 부분은 법적 근거로 신뢰하지 말고 반드시 원문을 직접 확인하세요."
+            )
+            answer += warning
+
+        return answer
 
     except Exception as e:
         return f"AI 개선권고사항 생성 중 오류가 발생했습니다: {e}"
@@ -615,6 +651,22 @@ with col2:
         # 검색 쿼리로 "More Flow" 같은 영문 라벨만 쓰면 한국어 법령 원문과 임베딩 유사도가
         # 잘 안 잡혀서(교차 언어 매칭이 약함), 실제 원인·결과 한국어 문장을 붙여서 검색한다.
         search_query = f"{selected_deviation}. 원인: {current_entry['원인']}. 결과: {current_entry['결과']}"
+
+        # 설비명이 영문 약칭(Relief Valve 등)으로만 적혀 있으면 한국어 법령 원문의 용어
+        # (안전밸브, 액위계 등)와 임베딩 유사도가 잘 안 잡힌다. 알려진 영/한 동의어를
+        # 검색어에 덧붙여 교차 언어 매칭을 보강한다.
+        EQUIPMENT_SYNONYMS = {
+            "Relief Valve": "안전밸브 릴리프밸브 압력방출장치",
+            "Level Gauge": "액위계 레벨센서 레벨게이지",
+            "Check Valve": "체크밸브 역지밸브",
+            "Alarm": "경보장치 알람",
+        }
+        extra_terms = " ".join(
+            ko for en, ko in EQUIPMENT_SYNONYMS.items()
+            if en in search_query
+        )
+        if extra_terms:
+            search_query = f"{search_query} {extra_terms}"
 
         with st.spinner("KOSHA & 법령 DB 검색 중..."):
             # 법령 DB는 출처 이름으로 거르지 않음 (law_chunks의 source는 "산업안전보건법(법률)" 등
@@ -649,7 +701,10 @@ with col2:
     with st.expander("AI 추천 개선권고사항 분석 결과 (클릭하여 열기/닫기)", expanded=True):
         result_text = st.session_state.get("gpt_output_single", "")
         if result_text:
-            st.markdown(result_text, unsafe_allow_html=True)
+            # 결과가 길어서 페이지 전체를 계속 스크롤해야 하는 문제를 막기 위해,
+            # 고정 높이의 내부 스크롤 영역 안에서만 결과를 보여준다.
+            with st.container(height=460, border=False):
+                st.markdown(result_text, unsafe_allow_html=True)
         else:
             st.info("아직 AI 분석 결과가 없습니다.")
 
