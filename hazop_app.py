@@ -291,11 +291,11 @@ st.markdown("""
     position: sticky;
     top: 0;
     z-index: 999;
-    background: linear-gradient(135deg, #EA0029 0%, #970018 100%);
+    background: linear-gradient(135deg, #EE1C25 0%, #FF6A00 100%);
     padding: 22px 26px;
     border-radius: 10px;
     margin-bottom: 22px;
-    box-shadow: 0 3px 10px rgba(151,0,24,0.25);
+    box-shadow: 0 3px 10px rgba(238,28,37,0.25);
 }
 
 .header h1 {
@@ -346,7 +346,7 @@ section.main > div {
     align-items: flex-start;
     gap: 10px;
     padding: 10px 14px;
-    border-left: 3px solid #EA0029;
+    border-left: 3px solid #EE1C25;
     background-color: #fafafa;
     border-radius: 6px;
     margin-bottom: 8px;
@@ -356,7 +356,7 @@ section.main > div {
     width: 84px;
     font-weight: 700;
     font-size: 13px;
-    color: #C0001F;
+    color: #C81620;
 }
 .fact-row .fact-value {
     font-size: 14px;
@@ -370,17 +370,17 @@ section.main > div {
 .stButton > button {
     border-radius: 8px;
     font-weight: 600;
-    border: 1px solid #EA0029;
+    border: 1px solid #EE1C25;
     transition: all 0.15s ease;
 }
 .stButton > button[kind="primary"],
 .stButton > button:not([kind]) {
-    background-color: #EA0029;
+    background-color: #EE1C25;
     color: white;
 }
 .stButton > button:hover {
-    background-color: #C0001F;
-    border-color: #C0001F;
+    background-color: #C81620;
+    border-color: #C81620;
     color: white;
 }
 
@@ -426,7 +426,7 @@ hr {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.08em;
-    color: #EA0029;
+    color: #EE1C25;
     background: rgba(234,0,41,0.08);
     padding: 4px 12px;
     border-radius: 999px;
@@ -436,7 +436,7 @@ hr {
     margin: 8px 0 0;
     font-size: 25px;
     font-weight: 800;
-    color: #1a1a1a;
+    color: #0F1B2E;
     letter-spacing: -0.01em;
 }
 
@@ -447,7 +447,7 @@ hr {
     color: #262626;
     margin: 0 0 14px;
     padding-bottom: 9px;
-    border-bottom: 2px solid #EA0029;
+    border-bottom: 2px solid #EE1C25;
     display: block;
 }
 .minor-title {
@@ -496,7 +496,7 @@ section[data-testid="stSidebar"] {
 section[data-testid="stSidebar"] h2 {
     font-size: 15px;
     font-weight: 800;
-    color: #EA0029;
+    color: #EE1C25;
     letter-spacing: 0.02em;
 }
 </style>
