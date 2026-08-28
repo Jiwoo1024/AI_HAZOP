@@ -1,11 +1,10 @@
+import streamlit as st
 import pandas as pd
 import faiss
 import pickle
 import numpy as np
 from openai import OpenAI
 from pathlib import Path
-import streamlit as st
-import os
 
 st.set_page_config(page_title="HAZOP AI Program", layout="wide")
 
@@ -173,18 +172,16 @@ for node in hazop_db:
         }
 
 # ✅ FAISS DB 불러오기
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-law_index = faiss.read_index(os.path.join(BASE_DIR, "law_faiss.index"))
-with open(os.path.join(BASE_DIR, "law_chunks.pkl"), "rb") as f:
+law_index = faiss.read_index("law_faiss.index")
+with open("law_chunks.pkl", "rb") as f:
     law_chunks = pickle.load(f)
 
-guide_index = faiss.read_index(os.path.join(BASE_DIR, "index.faiss"))
-with open(os.path.join(BASE_DIR, "index.pkl"), "rb") as f:
+guide_index = faiss.read_index("index.faiss")
+with open("index.pkl", "rb") as f:
     guide_chunks = pickle.load(f)
 
-handbook_index = faiss.read_index(os.path.join(BASE_DIR, "handbook_index.faiss"))
-with open(os.path.join(BASE_DIR, "handbook_chunks.pkl"), "rb") as f:
+handbook_index = faiss.read_index("handbook_index.faiss")
+with open("handbook_chunks.pkl", "rb") as f:
     handbook_chunks = pickle.load(f)
 
 # ✅ 검색 함수 (KOSHA 출처만 우선적으로 필터링)
@@ -211,8 +208,7 @@ def search_db(index, chunks, query, k=5):
                 elif isinstance(chunk, dict):
                     content = chunk.get("content", "")
                     source = chunk.get("source", "")
-                else:
-                    continue
+                else:                   continue
 
                 if "KOSHA" in source.upper():
                     entry = f"{content} (출처: {source})"
@@ -226,7 +222,7 @@ def search_db(index, chunks, query, k=5):
 # ✅ 사이드바
 st.sidebar.header("분석 설정")
 process_name = st.sidebar.text_input("대상 공정", value="에틸렌 저장탱크 공정")
-analysis_method = st.sidebar.text_input("분석 기법", value="HAZOP")
+analysis_method = st.sidebar.text_input("분석 기법", value="HAZOP Lite")
 selected_node = st.sidebar.selectbox("단일 편차 분석 Node 선택", list(hazop_db.keys()), key="sidebar_node_select")
 # ✅ 세션 초기화
 if "data" not in st.session_state:
@@ -238,7 +234,7 @@ st.markdown("""
 .header {
     position: sticky;
     top: 0;
-    background-color: #000000;
+    background: linear-gradient(135deg, #EA0029 0%, #C0001F 100%);  # ← 이것만 교체
     padding: 20px;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -273,11 +269,10 @@ section.main > div {
 }
 
 .card {
-    background-color: #FFFFFF;
+    background-color: #f8f9fc;
     padding: 20px;
     border-radius: 10px;
-    border: 1px solid #F5F5F5;
-    border-left: 4px solid #E8192C;
+    border: 1px solid #e1e4eb;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -287,66 +282,6 @@ st.markdown("""
 .streamlit-expanderHeader {
     font-size: 18px;
     font-weight: 600;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<style>
-/* 사이드바 배경 검정 */
-[data-testid="stSidebar"] {
-    background-color: #000000;
-}
-
-/* 사이드바 글씨 흰색 */
-[data-testid="stSidebar"] * {
-    color: #FFFFFF !important;
-}
-
-/* 사이드바 입력창 */
-/* 사이드바 입력창 */
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] .stSelectbox > div,
-[data-testid="stSidebar"] .stSelectbox > div > div,
-[data-testid="stSidebar"] .stSelectbox > div > div > div,
-[data-testid="stSidebar"] [data-baseweb="select"] > div {
-    background-color: #1A1A1A !important;
-    border: 1px solid #333333 !important;
-    color: #FFFFFF !important;
-}
-
-[data-testid="stSidebar"] [data-baseweb="select"] * {
-    color: #FFFFFF !important;
-    background-color: #1A1A1A !important;
-}
-
-[data-testid="stSidebar"] .stSelectbox > div:focus-within,
-[data-testid="stSidebar"] [data-baseweb="select"] div:focus,
-[data-testid="stSidebar"] [data-baseweb="select"] div:active {
-    background-color: #1A1A1A !important;
-    border: 1px solid #333333 !important;
-}
-
-/* 커서 올리면 박스에만 빨간 줄 */
-[data-testid="stSidebar"] .stSelectbox > div:hover,
-[data-testid="stSidebar"] .stTextInput > div:hover {
-    border-left: 3px solid #E8192C !important;
-    padding-left: 8px;
-    transition: all 0.2s ease;
-}
-
-/* 드롭다운 옵션 팝업 */
-[data-testid="stSelectboxVirtualDropdown"] {
-    background-color: #000000 !important;
-    color: #FFFFFF !important;
-}
-
-[data-testid="stSelectboxVirtualDropdown"] li {
-    color: #FFFFFF !important;
-}
-
-[data-testid="stSelectboxVirtualDropdown"] li:hover {
-    background-color: #E8192C !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -459,11 +394,12 @@ accident_cases = {
 }
 
 # ✅ AI 개선 Safeguard 생성 함수
-def generate_ai_safeguard(node, deviation, deviation_data, guide_results, law_results, accident_results_str=None):
+def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results, law_results, accident_results_str=None):
     if client is None:
         return """
 ### AI 기능 안내
 현재 API 키가 설정되지 않아 AI 개선권고사항 생성 기능은 비활성화되어 있습니다.
+
 대신 본 앱에서는 다음 기능을 확인할 수 있습니다.
 - 단일 편차 HAZOP 분석
 - 위험도 평가
@@ -472,22 +408,36 @@ def generate_ai_safeguard(node, deviation, deviation_data, guide_results, law_re
 """
 
     prompt = f"""
-당신은 산업안전 컨설턴트입니다.
-[분석 대상]
-- 공정: 에틸렌 저장탱크 ({node})
-- Deviation: {deviation}
-- 원인: {deviation_data['원인']}
-- 결과: {deviation_data['결과']}
-- 현재 안전조치: {deviation_data['현재 안전조치']}
-- DB 권고 개선조치: {deviation_data['개선 조치']}
-위 내용을 바탕으로 아래 항목을 작성하세요:
-1. KOSHA 가이드 기준의 기본 개선 권고사항 2가지
-2. 산업안전보건법 등 법령에 근거한 필수 안전조치 및 관련 조문 2가지
-3. 관련 사고사례
+당신은 산업안전 컨설턴트입니다. HAZOP 방법론에 따라 개선권고사항을 작성하되,
+아래 원칙을 반드시 지키십시오.
+
+[원칙 1] 개선권고는 성격이 다른 두 축으로 나누어 작성하십시오.
+- (A) 원인 감소(예방): 아래 [원인]이 애초에 발생하지 않도록 막는 조치
+- (B) 결과 완화(방호): [원인]이 발생하더라도 아래 [결과]까지 이어지지 않도록 막거나
+      피해를 줄이는 조치 (이미 있는 [현재 안전조치]와 중복되지 않게 작성)
+각 축마다 최소 1개, 최대 2개씩 작성하십시오.
+
+[원칙 2] 법령은 편차 자체가 아니라, 당신이 위에서 작성한 "개별 개선권고사항"에
+실질적으로 대응하는 경우에만 붙이십시오. 즉 "이 개선권고를 시행해야 하는 법적
+근거가 [참고 Law]에 있는가"를 개선권고마다 따로 판단하십시오.
+- 대응되는 조문이 있으면: 그 개선권고 옆에 "법적 근거: <법령명 조문번호>"로 표기
+- 대응되는 조문이 없으면: 억지로 끼워맞추지 말고 "법적 근거: 없음(업계 모범사례 기준)"이라고
+  명시하십시오. 근거 없이 조문번호를 지어내지 마십시오.
+- [참고 Law]에 있는 내용이라도 이 편차의 원인/결과와 실질적으로 무관하면 인용하지 마십시오.
+
+[원칙 3] 마지막에 관련 사고사례를 별도 항목으로 정리하십시오.
+
+Deviation: {deviation}
+[원인]: {cause}
+[결과]: {consequence}
+[현재 안전조치]: {existing}
+
 참고 Guide:
 {guide_results}
+
 참고 Law:
 {law_results}
+
 참고 사고사례:
 {accident_results_str if accident_results_str else "없음"}
 """
@@ -538,10 +488,12 @@ with col2:
             accident_results_str = accident_cases[selected_deviation] if show_accident_case else None
 
         with st.spinner("AI가 개선권고사항 생성 중..."):
+            current_entry = hazop_db[selected_node][selected_deviation]
             st.session_state["gpt_output_single"] = generate_ai_safeguard(
-                selected_node,
                 selected_deviation,
-                hazop_db[selected_node][selected_deviation],
+                current_entry["원인"],
+                current_entry["결과"],
+                current_entry["현재 안전조치"],
                 guide_results_str,
                 law_results_str,
                 accident_results_str
@@ -757,16 +709,4 @@ Node: {node_ai}
                 st.error(f"복합 편차 AI 분석 중 오류가 발생했습니다: {e}")
 
 else:
-
     st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
-
-
-
-
-
-
-
-
-
-
-
