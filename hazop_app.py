@@ -416,42 +416,48 @@ section.main > div {
 }
 
 /* ── 선택박스 / 입력창 ────────────────────────── */
-/* BaseWeb select는 내부에 div가 여러 겹 중첩돼 있어서, 자식(>) 대신
-   후손 선택자로 모든 depth의 배경/글자색을 강제 통일한다. */
-div[data-baseweb="select"] {
-    background-color: var(--bg-card-alt) !important;
-    border-radius: 8px !important;
-}
-div[data-baseweb="select"] > div {
+/* 최신 Streamlit(react-aria-components 기반)은 BaseWeb이 아니라
+   role="group"/"combobox" 구조를 쓴다. 실제로 흰 배경이 그려지는
+   지점은 data-rac 속성이 붙은 role="group" div다. */
+div[data-testid="stSelectbox"] div[role="group"],
+div[data-testid="stNumberInput"] div[role="group"],
+.react-aria-ComboBox div[role="group"] {
     background-color: var(--bg-card-alt) !important;
     border-color: var(--border) !important;
+    border-radius: 8px !important;
 }
-div[data-baseweb="select"] div,
-div[data-baseweb="select"] span,
-div[data-baseweb="select"] input {
+div[data-testid="stSelectbox"] input,
+div[data-testid="stNumberInput"] input,
+.react-aria-ComboBox input {
     background-color: transparent !important;
     color: var(--text-primary) !important;
 }
-div[data-baseweb="select"] svg { fill: var(--text-secondary) !important; }
+div[data-testid="stSelectbox"] svg,
+div[data-testid="stNumberInput"] svg,
+.react-aria-ComboBox svg {
+    fill: var(--text-secondary) !important;
+    color: var(--text-secondary) !important;
+}
 
 .stTextInput input,
-.stTextArea textarea,
-.stNumberInput input {
+.stTextArea textarea {
     border-radius: 8px !important;
     border-color: var(--border) !important;
     background-color: var(--bg-card-alt) !important;
     color: var(--text-primary) !important;
 }
 
-/* 드롭다운 옵션 목록은 body 하위 별도 레이어(포탈)로 렌더링되므로 전역 선택자로 처리 */
-ul[role="listbox"], div[data-baseweb="popover"] {
+/* 드롭다운 펼침 목록은 body 하위 별도 레이어(포탈)로 렌더링되므로 전역 선택자로 처리 */
+div[role="listbox"], ul[role="listbox"],
+div[data-baseweb="popover"], div[popover], [data-rac][role="presentation"] {
     background-color: var(--bg-card-alt) !important;
 }
-ul[role="listbox"] li, ul[role="listbox"] li * {
+div[role="listbox"] [role="option"], ul[role="listbox"] li,
+div[role="listbox"] [role="option"] *, ul[role="listbox"] li * {
     background-color: var(--bg-card-alt) !important;
     color: var(--text-primary) !important;
 }
-ul[role="listbox"] li:hover {
+div[role="listbox"] [role="option"]:hover, ul[role="listbox"] li:hover {
     background-color: var(--bg-card) !important;
 }
 
@@ -589,10 +595,6 @@ section[data-testid="stSidebar"] h2 {
     color: var(--accent) !important;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-}
-section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
-    background-color: var(--bg-card) !important;
-    border-color: var(--border) !important;
 }
 </style>
 """, unsafe_allow_html=True)
