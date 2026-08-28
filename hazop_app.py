@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import faiss
 import pickle
+import re
 import numpy as np
 from openai import OpenAI
 from pathlib import Path
@@ -184,8 +185,12 @@ handbook_index = faiss.read_index("handbook_index.faiss")
 with open("handbook_chunks.pkl", "rb") as f:
     handbook_chunks = pickle.load(f)
 
-# ✅ 검색 함수 (KOSHA 출처만 우선적으로 필터링)
-def search_db(index, chunks, query, k=5):
+# ✅ 검색 함수
+# source_filter를 넘기면 그 문자열이 출처(source)에 포함된 청크만 사용합니다.
+# 법령 DB(law_chunks)는 출처가 "산업안전보건법(법률)" 등으로 저장돼 있어서
+# "KOSHA" 필터를 걸면 전부 걸러져 법령 검색 결과가 항상 빈 리스트가 되는 버그가
+# 있었습니다 — 법령 검색에는 source_filter를 주지 않도록 호출부를 분리했습니다.
+def search_db(index, chunks, query, k=5, source_filter=None):
     if client is None:
         return ["API 키가 설정되지 않아 DB 검색이 비활성화되었습니다."]
 
@@ -210,15 +215,63 @@ def search_db(index, chunks, query, k=5):
                     source = chunk.get("source", "")
                 else:                   continue
 
-                if "KOSHA" in source.upper():
-                    entry = f"{content} (출처: {source})"
-                    results.append(entry)
+                if source_filter and source_filter.upper() not in source.upper():
+                    continue
 
-        return results[:2]
+                entry = f"{content} (출처: {source})"
+                results.append(entry)
+
+        return results[:5]
 
     except Exception as e:
         return [f"DB 검색 중 오류 발생: {e}"]
-    
+
+
+# ✅ 벡터 검색은 "유사한 단어"를 찾을 뿐, "이 편차에 실제로 적용되는가"는 판단하지 않는다.
+# 그래서 search_db()가 찾아온 후보를 AI에게 다시 보여주고, 이 편차의 원인/결과에 실질적으로
+# 관련 있는 것만 추리게 한다. 후보가 하나도 관련 없으면 억지로 채우지 않고 빈 리스트를 반환한다.
+def rerank_relevant(query, raw_results, limit=2):
+    if not raw_results or client is None:
+        return raw_results[:limit]
+    # search_db()가 에러/비활성 메시지를 반환한 경우 그대로 통과
+    if raw_results[0].startswith("API 키") or raw_results[0].startswith("DB 검색 중 오류"):
+        return raw_results
+
+    numbered = "\n".join(f"[{i+1}] {r[:400]}" for i, r in enumerate(raw_results))
+    prompt = f"""아래는 '{query}' 라는 공정 편차(Deviation)와 관련해 벡터 검색으로 찾아온 후보 자료입니다.
+각 후보가 이 편차의 원인 또는 결과에 실질적으로 적용되는 내용인지 엄격하게 판단하십시오.
+단순히 같은 분야(안전, 화학물질 등)라는 이유로 관련 있다고 판단하지 마십시오.
+
+관련 있는 후보의 번호만 쉼표로 구분해 답하십시오. 관련 있는 게 하나도 없으면 "없음"이라고만 답하십시오.
+번호나 "없음" 외의 다른 설명은 절대 쓰지 마십시오.
+
+{numbered}
+"""
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "너는 산업안전 자료의 관련성을 엄격하게 판단하는 검토자야."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        answer = response.choices[0].message.content.strip()
+        picked_idx = [int(t) - 1 for t in re.findall(r"\d+", answer)]
+        picked = [raw_results[i] for i in picked_idx if 0 <= i < len(raw_results)]
+        return picked[:limit]
+    except Exception:
+        # 재랭킹 자체가 실패하면(API 오류 등) 기존 동작으로 폴백 — 검색은 됐으니 결과 없이 끝내지 않음
+        return raw_results[:limit]
+
+
+def relevance_note(raw_results, reranked_results, label):
+    """법령/가이드 참고자료가 비어있는 이유를 구분해서 AI 프롬프트에 넣어줄 안내문."""
+    if reranked_results:
+        return ""
+    if not raw_results or (raw_results[0].startswith("API 키") or raw_results[0].startswith("DB 검색 중 오류")):
+        return f"[{label} 안내] DB에서 이 편차와 유사한 후보 자체를 찾지 못했습니다."
+    return f"[{label} 안내] DB에서 후보 {len(raw_results)}건을 찾았으나, 검토 결과 이 편차의 원인/결과와 실질적으로 관련된 내용이 없어 모두 제외했습니다."
+
 # ✅ 사이드바
 st.sidebar.header("분석 설정")
 process_name = st.sidebar.text_input("대상 공정", value="에틸렌 저장탱크 공정")
@@ -234,26 +287,31 @@ st.markdown("""
 .header {
     position: sticky;
     top: 0;
-    background: linear-gradient(135deg, #EA0029 0%, #C0001F 100%);  # ← 이것만 교체
-    padding: 20px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    z-index: 999;
+    background: linear-gradient(135deg, #EA0029 0%, #970018 100%);
+    padding: 22px 26px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+    box-shadow: 0 3px 10px rgba(151,0,24,0.25);
 }
 
 .header h1 {
     color: white;
-    font-size: 32px;
+    font-size: 28px;
+    font-weight: 800;
     margin: 0;
+    letter-spacing: -0.01em;
 }
 
 .header p {
-    color: #E6E6E6;
-    margin: 5px 0 0 0;
+    color: rgba(255,255,255,0.88);
+    font-size: 14px;
+    margin: 6px 0 0 0;
 }
 </style>
 
 <div class="header">
-<h1>AI-Based HAZOP Safety Analysis Tool</h1>
+<h1>🛡️ AI-Based HAZOP Safety Analysis Tool</h1>
 <p>Process Hazard Analysis with AI-based Safeguard Recommendation</p>
 </div>
 """, unsafe_allow_html=True)
@@ -262,26 +320,92 @@ st.markdown("""
 <style>
 .block-container {
     padding-top: 2rem;
+    max-width: 1200px;
 }
 
 section.main > div {
     padding-top: 1rem;
 }
 
+/* ── 카드 컨테이너 ─────────────────────────────── */
 .card {
-    background-color: #f8f9fc;
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid #e1e4eb;
+    background-color: #ffffff;
+    padding: 20px 22px;
+    border-radius: 12px;
+    border: 1px solid #e5e2e0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    margin-bottom: 16px;
 }
-</style>
-""", unsafe_allow_html=True)
 
-st.markdown("""
-<style>
-.streamlit-expanderHeader {
-    font-size: 18px;
+/* 원인/결과/현재 안전조치 미니 카드 */
+.fact-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    border-left: 3px solid #EA0029;
+    background-color: #fafafa;
+    border-radius: 6px;
+    margin-bottom: 8px;
+}
+.fact-row .fact-label {
+    flex-shrink: 0;
+    width: 84px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #C0001F;
+}
+.fact-row .fact-value {
+    font-size: 14px;
+    color: #262626;
+    line-height: 1.5;
+}
+.fact-row.safeguard { border-left-color: #6b7280; }
+.fact-row.safeguard .fact-label { color: #4b5563; }
+
+/* ── 버튼 ─────────────────────────────────────── */
+.stButton > button {
+    border-radius: 8px;
     font-weight: 600;
+    border: 1px solid #EA0029;
+    transition: all 0.15s ease;
+}
+.stButton > button[kind="primary"],
+.stButton > button:not([kind]) {
+    background-color: #EA0029;
+    color: white;
+}
+.stButton > button:hover {
+    background-color: #C0001F;
+    border-color: #C0001F;
+    color: white;
+}
+
+/* ── 선택박스 / 입력창 ────────────────────────── */
+div[data-baseweb="select"] > div,
+.stTextInput input,
+.stTextArea textarea {
+    border-radius: 8px !important;
+    border-color: #ddd6d3 !important;
+}
+
+/* ── 확장영역(expander) ──────────────────────── */
+.streamlit-expanderHeader {
+    font-size: 17px;
+    font-weight: 700;
+    border-radius: 8px;
+}
+div[data-testid="stExpander"] {
+    border: 1px solid #e5e2e0;
+    border-radius: 10px;
+}
+
+/* ── 서브헤더 여백 ────────────────────────────── */
+h2, h3 {
+    letter-spacing: -0.01em;
+}
+hr {
+    margin: 1.6rem 0;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -311,9 +435,11 @@ with col1:
     )
 
     # ✅ 현재 정보 표시
-    st.write(f"원인: {hazop_db[selected_node][selected_deviation]['원인']}")
-    st.write(f"결과: {hazop_db[selected_node][selected_deviation]['결과']}")
-    st.write(f"현재 안전조치: {hazop_db[selected_node][selected_deviation]['현재 안전조치']}")
+    st.markdown(f"""
+<div class="fact-row"><div class="fact-label">원인</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['원인']}</div></div>
+<div class="fact-row"><div class="fact-label">결과</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['결과']}</div></div>
+<div class="fact-row safeguard"><div class="fact-label">현재 안전조치</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['현재 안전조치']}</div></div>
+""", unsafe_allow_html=True)
 
     # ✅ 발생빈도 / 발생강도
     freq = st.selectbox("발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_single")
@@ -343,9 +469,11 @@ with col1:
         color = "darkred"
 
     # ✅ 현재 위험도 표시
-    st.markdown(f"현재 위험도: {risk_score} (빈도 {freq} × 강도 {sev})")
     st.markdown(
-        f"<h3 style='color:{color}; font-weight:700;'>현재 위험도: {risk_score}점 → {risk_level}</h3>",
+        f"""<div class="card" style="border-left: 5px solid {color}; padding: 14px 18px; margin-top: 4px;">
+<div style="font-size:13px; color:#6b7280; font-weight:600;">현재 위험도 (빈도 {freq} × 강도 {sev})</div>
+<div style="font-size:22px; font-weight:800; color:{color}; margin-top:2px;">{risk_score}점 &nbsp;→&nbsp; {risk_level}</div>
+</div>""",
         unsafe_allow_html=True
     )
 
@@ -418,10 +546,19 @@ def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results
 각 축마다 최소 1개, 최대 2개씩 작성하십시오.
 
 [원칙 2] 법령은 편차 자체가 아니라, 당신이 위에서 작성한 "개별 개선권고사항"에
-실질적으로 대응하는 경우에만 붙이십시오. 즉 "이 개선권고를 시행해야 하는 법적
-근거가 [참고 Law]에 있는가"를 개선권고마다 따로 판단하십시오.
-- 대응되는 조문이 있으면: 그 개선권고 옆에 "법적 근거: <법령명 조문번호>"로 표기
-- 대응되는 조문이 없으면: 억지로 끼워맞추지 말고 "법적 근거: 없음(업계 모범사례 기준)"이라고
+실질적으로 대응하는 경우에만 붙이십시오. 즉 "이 개선권고를 시행해야 하는 근거가
+[참고 Law]에 있는가"를 개선권고마다 따로 판단하십시오. 이때 [참고 Law]의 출처 종류를
+반드시 구분해서 표기하십시오.
+- 한국 법령(산업안전보건법, 산업안전보건기준에 관한 규칙 등)에 대응되는 조문이 있으면:
+  "법적 근거: <법령명 조문번호> (국내 법적 의무사항)"
+- 해외 기준("OSHA"/"NFPA"가 출처에 포함된 자료)에 대응되는 조항이 있으면:
+  "참고 기준: <출처 조항번호> (국제 기술기준 참고 — 한국 내 법적 강제력 없음, 모범사례로만 활용)"
+  이라고 명시하여 한국 법령과 절대 같은 급으로 "법적 근거"라고 쓰지 마십시오.
+- MSDS(물질안전보건자료, 출처에 "MSDS"가 포함된 자료)에서 가져온 물성·유해성 수치
+  (인화점, 폭발범위, 증기압 등)를 개선권고의 배경 설명에 쓸 경우: "참고자료: 에틸렌 MSDS"
+  라고만 표기하고, 이것도 "법적 근거"나 "참고 기준"(국제기술기준)이 아니라 순수한
+  물질 특성 데이터임을 구분하십시오.
+- 대응되는 조문/자료가 전혀 없으면: 억지로 끼워맞추지 말고 "법적 근거: 없음(업계 모범사례 기준)"이라고
   명시하십시오. 근거 없이 조문번호를 지어내지 마십시오.
 - [참고 Law]에 있는 내용이라도 이 편차의 원인/결과와 실질적으로 무관하면 인용하지 마십시오.
 
@@ -474,21 +611,31 @@ with col2:
         show_accident_case = st.checkbox("사고사례도 함께 보기", value=False)
 
     if st.button("AI 추천 개선권고사항"):
+        current_entry = hazop_db[selected_node][selected_deviation]
+        # 검색 쿼리로 "More Flow" 같은 영문 라벨만 쓰면 한국어 법령 원문과 임베딩 유사도가
+        # 잘 안 잡혀서(교차 언어 매칭이 약함), 실제 원인·결과 한국어 문장을 붙여서 검색한다.
+        search_query = f"{selected_deviation}. 원인: {current_entry['원인']}. 결과: {current_entry['결과']}"
+
         with st.spinner("KOSHA & 법령 DB 검색 중..."):
-            law_results = search_db(law_index, law_chunks, selected_deviation)
-            guide_results = search_db(guide_index, guide_chunks, selected_deviation)
+            # 법령 DB는 출처 이름으로 거르지 않음 (law_chunks의 source는 "산업안전보건법(법률)" 등
+            # 법령명이지 "KOSHA"가 아니라서, 여기에 KOSHA 필터를 걸면 결과가 항상 비었음)
+            law_results_raw = search_db(law_index, law_chunks, search_query)
+            # 가이드 DB는 KOSHA 출처만 우선 사용
+            guide_results_raw = search_db(guide_index, guide_chunks, search_query, source_filter="KOSHA")
 
-            kosha_results = [r for r in guide_results if "KOSHA" in r.upper()]
-            nfpa_results = [r for r in guide_results if "NFPA" in r.upper()]
-            guide_final = kosha_results if kosha_results else nfpa_results
+            # 벡터 유사도로 찾아온 후보를 AI가 다시 보고, 실제로 이 편차에 적용되는 것만 추림
+            law_results = rerank_relevant(search_query, law_results_raw)
+            guide_results = rerank_relevant(search_query, guide_results_raw)
 
-            law_results_str = "\n".join(law_results)
-            guide_results_str = "\n".join(guide_final)
+            law_note = relevance_note(law_results_raw, law_results, "법령")
+            guide_note = relevance_note(guide_results_raw, guide_results, "KOSHA 가이드")
+
+            law_results_str = "\n".join(law_results) if law_results else law_note
+            guide_results_str = "\n".join(guide_results) if guide_results else guide_note
 
             accident_results_str = accident_cases[selected_deviation] if show_accident_case else None
 
         with st.spinner("AI가 개선권고사항 생성 중..."):
-            current_entry = hazop_db[selected_node][selected_deviation]
             st.session_state["gpt_output_single"] = generate_ai_safeguard(
                 selected_deviation,
                 current_entry["원인"],
@@ -508,7 +655,7 @@ with col2:
 
     if manual_safeguard.strip():
         st.markdown("#### 관리자 입력 개선권고사항")
-        st.write(manual_safeguard)
+        st.markdown(f'<div class="card">{manual_safeguard}</div>', unsafe_allow_html=True)
 
     st.markdown("### 개선 후 위험도 평가")
 
@@ -516,7 +663,6 @@ with col2:
     sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
 
     risk_score_after = freq_after * sev_after
-    st.markdown(f"개선 후 위험도: {risk_score_after} (빈도 {freq_after} × 강도 {sev_after})")
 
     if risk_score_after <= 3:
         risk_level_after = "매우 낮음 (허용 가능)"
@@ -538,7 +684,10 @@ with col2:
         color_after = "darkred"
 
     st.markdown(
-        f"<h3 style='color:{color_after};'>개선 후 위험도: {risk_score_after}점 → {risk_level_after}</h3>",
+        f"""<div class="card" style="border-left: 5px solid {color_after}; padding: 14px 18px; margin-top: 4px;">
+<div style="font-size:13px; color:#6b7280; font-weight:600;">개선 후 위험도 (빈도 {freq_after} × 강도 {sev_after})</div>
+<div style="font-size:22px; font-weight:800; color:{color_after}; margin-top:2px;">{risk_score_after}점 &nbsp;→&nbsp; {risk_level_after}</div>
+</div>""",
         unsafe_allow_html=True
     )
 
