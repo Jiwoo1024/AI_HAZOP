@@ -578,8 +578,17 @@ hr {
     margin-bottom: 4px;
     border: 1px solid var(--border);
 }
+.status-banner::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
 .status-banner.ok { background: var(--bg-card-alt); color: #4ADE80; }
+.status-banner.ok::before { background: #4ADE80; }
 .status-banner.warn { background: var(--bg-card-alt); color: #FBBF24; }
+.status-banner.warn::before { background: #FBBF24; }
 
 /* ── 컬럼을 카드처럼 (뉴스룸 카드 그리드 느낌) ──────────── */
 div[data-testid="column"] {
@@ -638,103 +647,106 @@ def render_minor_title(title):
 
 if client is None:
     st.markdown(
-        '<div class="status-banner warn">⚠️ 현재 OpenAI API 키가 설정되지 않아 AI 추천 기능은 데모 모드로 표시됩니다.</div>',
+        '<div class="status-banner warn">현재 OpenAI API 키가 설정되지 않아 AI 추천 기능은 데모 모드로 표시됩니다.</div>',
         unsafe_allow_html=True,
     )
 else:
     st.markdown(
-        '<div class="status-banner ok">✅ OpenAI API 키가 설정되었습니다. 실제 유효성은 AI 실행 시 검증됩니다.</div>',
+        '<div class="status-banner ok">OpenAI API 키가 설정되었습니다. 실제 유효성은 AI 실행 시 검증됩니다.</div>',
         unsafe_allow_html=True,
     )
 
 st.caption("저장탱크 공정을 대상으로 단일·복합 편차를 분석하고, 위험도 평가 및 AI 기반 개선권고사항 도출 구조를 구현한 HAZOP 프로그램")
 
 # ✅ ------------------- 메인 2-Column UI -------------------
-render_section("STEP 1", "AI 단일 편차 HAZOP 분석")
+tab1, tab2 = st.tabs(["STEP 1 · 단일 편차 분석", "STEP 2 · 복합 편차 분석"])
 
-# ✅ 2-Column UI 시작
-col1, col2 = st.columns([1, 1], gap="large")
+with tab1:
+    render_section("STEP 1", "AI 단일 편차 HAZOP 분석")
 
-# ✅ [왼쪽] – Cause/Consequence + 현재조치 + 현재 위험도 평가
-with col1:
-    render_subsection("📊 현재 위험도 평가")
+    # ✅ 2-Column UI 시작
+    col1, col2 = st.columns([1, 1], gap="large")
 
-    # ✅ 편차 선택
-    selected_deviation = st.selectbox(
-        "편차 선택",
-        list(hazop_db[selected_node].keys()),
-        key="deviation_select_left"
-    )
+    # ✅ [왼쪽] – Cause/Consequence + 현재조치 + 현재 위험도 평가
+    with col1:
+        render_subsection("현재 위험도 평가")
 
-    # ✅ 현재 정보 표시
-    st.markdown(f"""
-<div class="fact-row"><div class="fact-label">원인</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['원인']}</div></div>
-<div class="fact-row"><div class="fact-label">결과</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['결과']}</div></div>
-<div class="fact-row safeguard"><div class="fact-label">현재 안전조치</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['현재 안전조치']}</div></div>
-""", unsafe_allow_html=True)
+        # ✅ 편차 선택
+        selected_deviation = st.selectbox(
+            "편차 선택",
+            list(hazop_db[selected_node].keys()),
+            key="deviation_select_left"
+        )
 
-    # ✅ 발생빈도 / 발생강도
-    freq = st.selectbox("발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_single")
-    sev = st.selectbox("발생강도 [1-4]", [1, 2, 3, 4], key="sev_single")
+        # ✅ 현재 정보 표시
+        st.markdown(f"""
+    <div class="fact-row"><div class="fact-label">원인</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['원인']}</div></div>
+    <div class="fact-row"><div class="fact-label">결과</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['결과']}</div></div>
+    <div class="fact-row safeguard"><div class="fact-label">현재 안전조치</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['현재 안전조치']}</div></div>
+    """, unsafe_allow_html=True)
 
-    # ✅ 위험도 계산
-    risk_score = freq * sev
+        # ✅ 발생빈도 / 발생강도
+        freq = st.selectbox("발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_single")
+        sev = st.selectbox("발생강도 [1-4]", [1, 2, 3, 4], key="sev_single")
 
-    # ✅ 위험 등급 판정
-    if risk_score <= 3:
-        risk_level = "매우 낮음 (허용 가능)"
-        color = "#4ADE80"
-    elif risk_score <= 6:
-        risk_level = "낮음 (허용 가능)"
-        color = "#60A5FA"
-    elif risk_score == 8:
-        risk_level = "보통 (허용 불가능)"
-        color = "#FB923C"
-    elif 9 <= risk_score <= 12:
-        risk_level = "약간 높음 (허용 불가능)"
-        color = "#F97316"
-    elif risk_score == 15:
-        risk_level = "높음 (허용 불가능)"
-        color = "#F87171"
-    else:
-        risk_level = "매우 높음 (허용 불가능)"
-        color = "#DC2626"
+        # ✅ 위험도 계산
+        risk_score = freq * sev
 
-    # ✅ 현재 위험도 표시
-    st.markdown(
-        f"""<div class="card" style="border-left: 5px solid {color}; padding: 14px 18px; margin-top: 4px;">
-<div style="font-size:13px; color:#9C9CA8; font-weight:600;">현재 위험도 (빈도 {freq} × 강도 {sev})</div>
-<div style="font-size:22px; font-weight:800; color:{color}; margin-top:2px;">{risk_score}점 &nbsp;→&nbsp; {risk_level}</div>
-</div>""",
-        unsafe_allow_html=True
-    )
+        # ✅ 위험 등급 판정
+        if risk_score <= 3:
+            risk_level = "매우 낮음 (허용 가능)"
+            color = "#4ADE80"
+        elif risk_score <= 6:
+            risk_level = "낮음 (허용 가능)"
+            color = "#60A5FA"
+        elif risk_score == 8:
+            risk_level = "보통 (허용 불가능)"
+            color = "#FB923C"
+        elif 9 <= risk_score <= 12:
+            risk_level = "약간 높음 (허용 불가능)"
+            color = "#F97316"
+        elif risk_score == 15:
+            risk_level = "높음 (허용 불가능)"
+            color = "#F87171"
+        else:
+            risk_level = "매우 높음 (허용 불가능)"
+            color = "#DC2626"
 
-    # ✅ 빈 줄
-    st.markdown(" ")
+        # ✅ 현재 위험도 표시
+        st.markdown(
+            f"""<div class="card" style="border-left: 5px solid {color}; padding: 14px 18px; margin-top: 4px;">
+    <div style="font-size:13px; color:#9C9CA8; font-weight:600;">현재 위험도 (빈도 {freq} × 강도 {sev})</div>
+    <div style="font-size:22px; font-weight:800; color:{color}; margin-top:2px;">{risk_score}점 &nbsp;→&nbsp; {risk_level}</div>
+    </div>""",
+            unsafe_allow_html=True
+        )
 
-    # ✅ 빈도/강도 기준 + 위험도 결정 기준
-    freq_col, matrix_col = st.columns([3, 5])
+        # ✅ 빈 줄
+        st.markdown(" ")
 
-    with freq_col:
-        render_minor_title("빈도·강도 설정 기준")
-        st.markdown("""
-- **빈도 (1~5)**  
-1 = 극히 드뭄  
-2 = 드뭄  
-3 = 보통  
-4 = 자주 발생  
+        # ✅ 빈도/강도 기준 + 위험도 결정 기준
+        freq_col, matrix_col = st.columns([3, 5])
+
+        with freq_col:
+            render_minor_title("빈도·강도 설정 기준")
+            st.markdown("""
+- **빈도 (1~5)**
+1 = 극히 드뭄
+2 = 드뭄
+3 = 보통
+4 = 자주 발생
 5 = 매우 자주 발생
 
-- **강도 (1~4)**  
-1 = 경미  
-2 = 보통  
-3 = 심각  
+- **강도 (1~4)**
+1 = 경미
+2 = 보통
+3 = 심각
 4 = 치명적
 """)
 
-    with matrix_col:
-        render_minor_title("위험도 결정 기준")
-        st.markdown("""
+        with matrix_col:
+            render_minor_title("위험도 결정 기준")
+            st.markdown("""
 | 점수 범위 | 위험도 등급 | 허용 여부 | 조치 권고사항 |
 |-----------|-------------|-----------|----------------|
 | 16~20 | 매우 높음 | 허용 불가능 | 즉시 개선 / 작업 중단 |
@@ -745,18 +757,18 @@ with col1:
 | 1~3 | 매우 낮음 | 허용 가능 | 개선 불요 또는 필요시 개선 |
 """)
         
-# ✅ [오른쪽] – AI 개선 Safeguard & 개선 후 위험도
+    # ✅ [오른쪽] – AI 개선 Safeguard & 개선 후 위험도
 
-# ✅ 사고사례가 존재하는 deviation 목록 및 사고사례 내용
-accident_cases = {
-    "More Pressure": """[관련 사고사례]
-탱크로리에서 액체를 하역하는 작업 도중 내부 압력이 비정상적으로 상승했음에도 불구하고, 설치된 안전밸브가 작동하지 않아 탱크가 파열되고 대규모 폭발이 발생하였습니다. 사고 조사 결과, 안전밸브의 미작동은 주기적인 점검과 유지보수가 제대로 이루어지지 않은 것이 원인이었습니다. (출처: KOSHA 중소규모사업장_화재폭발사고_예방_핸드북)"""
-}
+    # ✅ 사고사례가 존재하는 deviation 목록 및 사고사례 내용
+    accident_cases = {
+        "More Pressure": """[관련 사고사례]
+    탱크로리에서 액체를 하역하는 작업 도중 내부 압력이 비정상적으로 상승했음에도 불구하고, 설치된 안전밸브가 작동하지 않아 탱크가 파열되고 대규모 폭발이 발생하였습니다. 사고 조사 결과, 안전밸브의 미작동은 주기적인 점검과 유지보수가 제대로 이루어지지 않은 것이 원인이었습니다. (출처: KOSHA 중소규모사업장_화재폭발사고_예방_핸드북)"""
+    }
 
-# ✅ AI 개선 Safeguard 생성 함수
-def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results, law_results, accident_results_str=None):
-    if client is None:
-        return """
+    # ✅ AI 개선 Safeguard 생성 함수
+    def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results, law_results, accident_results_str=None):
+        if client is None:
+            return """
 ### AI 기능 안내
 현재 API 키가 설정되지 않아 AI 개선권고사항 생성 기능은 비활성화되어 있습니다.
 
@@ -767,7 +779,7 @@ def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results
 - 사고사례 및 참고 DB 연계 구조
 """
 
-    prompt = f"""
+        prompt = f"""
 당신은 산업안전 컨설턴트입니다. HAZOP 방법론에 따라 개선권고사항을 작성하되,
 아래 원칙을 반드시 지키십시오.
 
@@ -781,11 +793,10 @@ def generate_ai_safeguard(deviation, cause, consequence, existing, guide_results
 실질적으로 대응하는 경우에만 붙이십시오. 즉 "이 개선권고를 시행해야 하는 근거가
 아래 [참고 Guide]/[참고 Law]에 실제로 적혀 있는가"를 개선권고마다 따로 판단하십시오.
 
-**절대 규칙 (가장 중요): 법령명, 기준명(OSHA/NFPA 등), 조문·조항 번호는 반드시 아래
+**절대 규칙 (가장 중요): 법령명, 기준명(OSHA 등), 조문·조항 번호는 반드시 아래
 [참고 Guide]와 [참고 Law]의 텍스트 안에 실제로 적혀 있는 것만 그대로 옮겨 쓰십시오.
 그 안에 없는 법령명/기준명/조항번호는 절대 언급하지도, 추측하지도, 지어내지도 마십시오.
-예를 들어 [참고 Guide]/[참고 Law]에 "NFPA"라는 단어가 전혀 없다면 NFPA를 언급하는 것
-자체가 금지입니다. "그럴듯하게 들리는" 조항번호를 만들어내는 것도 금지입니다.**
+"그럴듯하게 들리는" 조항번호를 만들어내는 것도 금지입니다.**
 
 이때 실제로 인용하는 자료의 출처 종류를 반드시 구분해서 표기하십시오.
 - 한국 법령(출처에 "산업안전보건법", "산업안전보건기준에 관한 규칙" 등이 포함된 자료)에
@@ -818,156 +829,157 @@ Deviation: {deviation}
 {accident_results_str if accident_results_str else "없음"}
 """
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "너는 산업안전 전문가이자 위험성평가 컨설턴트야."},
-                {"role": "user", "content": prompt}
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "너는 산업안전 전문가이자 위험성평가 컨설턴트야."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            answer = response.choices[0].message.content
+
+            # 안전장치: 프롬프트로 "DB에 없는 출처는 언급 금지"라고 지시해도 LLM이 가끔
+            # 그럴듯한 법령/기준명을 지어내는 경우가 있다. 실제로 검색된 참고자료(guide_results,
+            # law_results)에 전혀 등장하지 않는 출처명이 답변에 나오면, 화면에 경고를 붙여
+            # 사용자가 바로 알아볼 수 있게 한다.
+            combined_sources = f"{guide_results}\n{law_results}"
+            KNOWN_SOURCE_KEYWORDS = ["NFPA", "ISO", "ANSI", "API RP", "EN 1"]
+            hallucinated = [
+                kw for kw in KNOWN_SOURCE_KEYWORDS
+                if kw in answer and kw not in combined_sources
             ]
-        )
-        answer = response.choices[0].message.content
+            if hallucinated:
+                warning = (
+                    f"\n\n---\n**주의**: 위 답변에 {', '.join(hallucinated)} 관련 언급이 있으나, "
+                    "실제로 검색된 참고자료(DB)에는 해당 출처가 없습니다. AI가 잘못 생성했을 가능성이 "
+                    "높으니 이 부분은 법적 근거로 신뢰하지 말고 반드시 원문을 직접 확인하세요."
+                )
+                answer += warning
 
-        # 안전장치: 프롬프트로 "DB에 없는 출처는 언급 금지"라고 지시해도 LLM이 가끔
-        # 그럴듯한 법령/기준명을 지어내는 경우가 있다. 실제로 검색된 참고자료(guide_results,
-        # law_results)에 전혀 등장하지 않는 출처명이 답변에 나오면, 화면에 경고를 붙여
-        # 사용자가 바로 알아볼 수 있게 한다.
-        combined_sources = f"{guide_results}\n{law_results}"
-        KNOWN_SOURCE_KEYWORDS = ["NFPA", "ISO", "ANSI", "API RP", "EN 1"]
-        hallucinated = [
-            kw for kw in KNOWN_SOURCE_KEYWORDS
-            if kw in answer and kw not in combined_sources
-        ]
-        if hallucinated:
-            warning = (
-                f"\n\n---\n⚠️ **주의**: 위 답변에 {', '.join(hallucinated)} 관련 언급이 있으나, "
-                "실제로 검색된 참고자료(DB)에는 해당 출처가 없습니다. AI가 잘못 생성했을 가능성이 "
-                "높으니 이 부분은 법적 근거로 신뢰하지 말고 반드시 원문을 직접 확인하세요."
-            )
-            answer += warning
+            return answer
 
-        return answer
-
-    except Exception as e:
-        return f"AI 개선권고사항 생성 중 오류가 발생했습니다: {e}"
+        except Exception as e:
+            return f"AI 개선권고사항 생성 중 오류가 발생했습니다: {e}"
         
-# ✅ Streamlit UI
-if "gpt_output_single" not in st.session_state:
-    st.session_state["gpt_output_single"] = ""
+    # ✅ Streamlit UI
+    if "gpt_output_single" not in st.session_state:
+        st.session_state["gpt_output_single"] = ""
 
-with col2:
-    render_subsection("🤖 AI 활용 개선권고사항")
+    with col2:
+        render_subsection("AI 활용 개선권고사항")
 
-    manual_safeguard = st.text_area(
-        "관리자 개선권고 입력",
-        value="",
-        height=120,
-        placeholder="관리자가 최종 판단하여 개선권고사항을 직접 입력할 수 있습니다."
-    )
-
-    show_accident_case = False
-    if selected_deviation in accident_cases:
-        show_accident_case = st.checkbox("사고사례도 함께 보기", value=False)
-
-    if st.button("AI 추천 개선권고사항"):
-        current_entry = hazop_db[selected_node][selected_deviation]
-        # 검색 쿼리로 "More Flow" 같은 영문 라벨만 쓰면 한국어 법령 원문과 임베딩 유사도가
-        # 잘 안 잡혀서(교차 언어 매칭이 약함), 실제 원인·결과 한국어 문장을 붙여서 검색한다.
-        search_query = f"{selected_deviation}. 원인: {current_entry['원인']}. 결과: {current_entry['결과']}"
-
-        # 설비명이 영문 약칭(Relief Valve 등)으로만 적혀 있으면 한국어 법령 원문의 용어
-        # (안전밸브, 액위계 등)와 임베딩 유사도가 잘 안 잡힌다. 알려진 영/한 동의어를
-        # 검색어에 덧붙여 교차 언어 매칭을 보강한다.
-        EQUIPMENT_SYNONYMS = {
-            "Relief Valve": "안전밸브 릴리프밸브 압력방출장치",
-            "Level Gauge": "액위계 레벨센서 레벨게이지",
-            "Check Valve": "체크밸브 역지밸브",
-            "Alarm": "경보장치 알람",
-        }
-        extra_terms = " ".join(
-            ko for en, ko in EQUIPMENT_SYNONYMS.items()
-            if en in search_query
+        manual_safeguard = st.text_area(
+            "관리자 개선권고 입력",
+            value="",
+            height=120,
+            placeholder="관리자가 최종 판단하여 개선권고사항을 직접 입력할 수 있습니다."
         )
-        if extra_terms:
-            search_query = f"{search_query} {extra_terms}"
 
-        with st.spinner("KOSHA & 법령 DB 검색 중..."):
-            # 법령 DB는 출처 이름으로 거르지 않음 (law_chunks의 source는 "산업안전보건법(법률)" 등
-            # 법령명이지 "KOSHA"가 아니라서, 여기에 KOSHA 필터를 걸면 결과가 항상 비었음)
-            law_results_raw = search_db(law_index, law_chunks, search_query)
-            # 가이드 DB는 KOSHA 출처만 우선 사용
-            guide_results_raw = search_db(guide_index, guide_chunks, search_query, source_filter="KOSHA")
+        show_accident_case = False
+        if selected_deviation in accident_cases:
+            show_accident_case = st.checkbox("사고사례도 함께 보기", value=False)
 
-            # 벡터 유사도로 찾아온 후보를 AI가 다시 보고, 실제로 이 편차에 적용되는 것만 추림
-            law_results = rerank_relevant(search_query, law_results_raw)
-            guide_results = rerank_relevant(search_query, guide_results_raw)
+        if st.button("AI 추천 개선권고사항"):
+            current_entry = hazop_db[selected_node][selected_deviation]
+            # 검색 쿼리로 "More Flow" 같은 영문 라벨만 쓰면 한국어 법령 원문과 임베딩 유사도가
+            # 잘 안 잡혀서(교차 언어 매칭이 약함), 실제 원인·결과 한국어 문장을 붙여서 검색한다.
+            search_query = f"{selected_deviation}. 원인: {current_entry['원인']}. 결과: {current_entry['결과']}"
 
-            law_note = relevance_note(law_results_raw, law_results, "법령")
-            guide_note = relevance_note(guide_results_raw, guide_results, "KOSHA 가이드")
-
-            law_results_str = "\n".join(law_results) if law_results else law_note
-            guide_results_str = "\n".join(guide_results) if guide_results else guide_note
-
-            accident_results_str = accident_cases[selected_deviation] if show_accident_case else None
-
-        with st.spinner("AI가 개선권고사항 생성 중..."):
-            st.session_state["gpt_output_single"] = generate_ai_safeguard(
-                selected_deviation,
-                current_entry["원인"],
-                current_entry["결과"],
-                current_entry["현재 안전조치"],
-                guide_results_str,
-                law_results_str,
-                accident_results_str
+            # 설비명이 영문 약칭(Relief Valve 등)으로만 적혀 있으면 한국어 법령 원문의 용어
+            # (안전밸브, 액위계 등)와 임베딩 유사도가 잘 안 잡힌다. 알려진 영/한 동의어를
+            # 검색어에 덧붙여 교차 언어 매칭을 보강한다.
+            EQUIPMENT_SYNONYMS = {
+                "Relief Valve": "안전밸브 릴리프밸브 압력방출장치",
+                "Level Gauge": "액위계 레벨센서 레벨게이지",
+                "Check Valve": "체크밸브 역지밸브",
+                "Alarm": "경보장치 알람",
+            }
+            extra_terms = " ".join(
+                ko for en, ko in EQUIPMENT_SYNONYMS.items()
+                if en in search_query
             )
+            if extra_terms:
+                search_query = f"{search_query} {extra_terms}"
 
-    with st.expander("AI 추천 개선권고사항 분석 결과 (클릭하여 열기/닫기)", expanded=True):
-        result_text = st.session_state.get("gpt_output_single", "")
-        if result_text:
-            # 결과가 길어서 페이지 전체를 계속 스크롤해야 하는 문제를 막기 위해,
-            # 고정 높이의 내부 스크롤 영역 안에서만 결과를 보여준다.
-            with st.container(height=460, border=False):
-                st.markdown(result_text, unsafe_allow_html=True)
+            with st.spinner("KOSHA & 법령 DB 검색 중..."):
+                # 법령 DB는 출처 이름으로 거르지 않음 (law_chunks의 source는 "산업안전보건법(법률)" 등
+                # 법령명이지 "KOSHA"가 아니라서, 여기에 KOSHA 필터를 걸면 결과가 항상 비었음)
+                law_results_raw = search_db(law_index, law_chunks, search_query)
+                # 가이드 DB는 KOSHA 출처만 우선 사용
+                guide_results_raw = search_db(guide_index, guide_chunks, search_query, source_filter="KOSHA")
+
+                # 벡터 유사도로 찾아온 후보를 AI가 다시 보고, 실제로 이 편차에 적용되는 것만 추림
+                law_results = rerank_relevant(search_query, law_results_raw)
+                guide_results = rerank_relevant(search_query, guide_results_raw)
+
+                law_note = relevance_note(law_results_raw, law_results, "법령")
+                guide_note = relevance_note(guide_results_raw, guide_results, "KOSHA 가이드")
+
+                law_results_str = "\n".join(law_results) if law_results else law_note
+                guide_results_str = "\n".join(guide_results) if guide_results else guide_note
+
+                accident_results_str = accident_cases[selected_deviation] if show_accident_case else None
+
+            with st.spinner("AI가 개선권고사항 생성 중..."):
+                st.session_state["gpt_output_single"] = generate_ai_safeguard(
+                    selected_deviation,
+                    current_entry["원인"],
+                    current_entry["결과"],
+                    current_entry["현재 안전조치"],
+                    guide_results_str,
+                    law_results_str,
+                    accident_results_str
+                )
+
+        with st.expander("AI 추천 개선권고사항 분석 결과 (클릭하여 열기/닫기)", expanded=True):
+            result_text = st.session_state.get("gpt_output_single", "")
+            if result_text:
+                # 결과가 길어서 페이지 전체를 계속 스크롤해야 하는 문제를 막기 위해,
+                # 고정 높이의 내부 스크롤 영역 안에서만 결과를 보여준다.
+                with st.container(height=460, border=False):
+                    st.markdown(result_text, unsafe_allow_html=True)
+            else:
+                st.info("아직 AI 분석 결과가 없습니다.")
+
+        if manual_safeguard.strip():
+            render_minor_title("관리자 입력 개선권고사항")
+            st.markdown(f'<div class="card">{manual_safeguard}</div>', unsafe_allow_html=True)
+
+        render_subsection("개선 후 위험도 평가")
+
+        freq_after = st.selectbox("개선 후 발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_after_col2")
+        sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
+
+        risk_score_after = freq_after * sev_after
+
+        if risk_score_after <= 3:
+            risk_level_after = "매우 낮음 (허용 가능)"
+            color_after = "#4ADE80"
+        elif risk_score_after <= 6:
+            risk_level_after = "낮음 (허용 가능)"
+            color_after = "#60A5FA"
+        elif risk_score_after == 8:
+            risk_level_after = "보통 (허용 불가능)"
+            color_after = "#FB923C"
+        elif 9 <= risk_score_after <= 12:
+            risk_level_after = "약간 높음 (허용 불가능)"
+            color_after = "#F97316"
+        elif risk_score_after == 15:
+            risk_level_after = "높음 (허용 불가능)"
+            color_after = "#F87171"
         else:
-            st.info("아직 AI 분석 결과가 없습니다.")
+            risk_level_after = "매우 높음 (허용 불가능)"
+            color_after = "#DC2626"
 
-    if manual_safeguard.strip():
-        render_minor_title("관리자 입력 개선권고사항")
-        st.markdown(f'<div class="card">{manual_safeguard}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""<div class="card" style="border-left: 5px solid {color_after}; padding: 14px 18px; margin-top: 4px;">
+    <div style="font-size:13px; color:#9C9CA8; font-weight:600;">개선 후 위험도 (빈도 {freq_after} × 강도 {sev_after})</div>
+    <div style="font-size:22px; font-weight:800; color:{color_after}; margin-top:2px;">{risk_score_after}점 &nbsp;→&nbsp; {risk_level_after}</div>
+    </div>""",
+            unsafe_allow_html=True
+        )
 
-    render_subsection("✅ 개선 후 위험도 평가")
-
-    freq_after = st.selectbox("개선 후 발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_after_col2")
-    sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
-
-    risk_score_after = freq_after * sev_after
-
-    if risk_score_after <= 3:
-        risk_level_after = "매우 낮음 (허용 가능)"
-        color_after = "#4ADE80"
-    elif risk_score_after <= 6:
-        risk_level_after = "낮음 (허용 가능)"
-        color_after = "#60A5FA"
-    elif risk_score_after == 8:
-        risk_level_after = "보통 (허용 불가능)"
-        color_after = "#FB923C"
-    elif 9 <= risk_score_after <= 12:
-        risk_level_after = "약간 높음 (허용 불가능)"
-        color_after = "#F97316"
-    elif risk_score_after == 15:
-        risk_level_after = "높음 (허용 불가능)"
-        color_after = "#F87171"
-    else:
-        risk_level_after = "매우 높음 (허용 불가능)"
-        color_after = "#DC2626"
-
-    st.markdown(
-        f"""<div class="card" style="border-left: 5px solid {color_after}; padding: 14px 18px; margin-top: 4px;">
-<div style="font-size:13px; color:#9C9CA8; font-weight:600;">개선 후 위험도 (빈도 {freq_after} × 강도 {sev_after})</div>
-<div style="font-size:22px; font-weight:800; color:{color_after}; margin-top:2px;">{risk_score_after}점 &nbsp;→&nbsp; {risk_level_after}</div>
-</div>""",
-        unsafe_allow_html=True
-    )
 
 # ✅ Node1 – 같은 변수 내 모순 + 진짜 불가능한 조합 포함
 invalid_combinations_node1 = [
@@ -1032,76 +1044,77 @@ def is_invalid_combination(devs, node):
             return True
     return False
 
-# ==========================================
-# 6. 복합 Deviation 분석 (핸드북 우선 적용 버전)
-# ==========================================
-st.markdown("---")
-render_section("STEP 2", "AI 복합 편차 HAZOP 분석")
 
-# ✅ 사이드바에서 노드 선택
-node_ai = st.sidebar.selectbox("AI 복합 편차 분석 Node 선택", ["Node1", "Node2"], key="node_sidebar_ai")
-deviation_list = list(hazop_db[node_ai].keys())
+with tab2:
+    # ==========================================
+    # 6. 복합 Deviation 분석 (핸드북 우선 적용 버전)
+    # ==========================================
+    render_section("STEP 2", "AI 복합 편차 HAZOP 분석")
 
-# ✅ 복합 Deviation 선택 (2~3개)
-selected_devs = st.multiselect("AI 분석 대상 편차 선택 (2~3개)", deviation_list, max_selections=3)
+    # ✅ 사이드바에서 노드 선택
+    node_ai = st.sidebar.selectbox("AI 복합 편차 분석 Node 선택", ["Node1", "Node2"], key="node_sidebar_ai")
+    deviation_list = list(hazop_db[node_ai].keys())
 
-# ✅ 실행 버튼
-run_multi_ai = st.button("복합 편차 AI 분석 실행")
+    # ✅ 복합 Deviation 선택 (2~3개)
+    selected_devs = st.multiselect("AI 분석 대상 편차 선택 (2~3개)", deviation_list, max_selections=3)
 
-# ✅ 핸드북 사고사례 전용 검색 함수
-def search_handbook_accidents(index, chunks, query, k=5):
-    if client is None:
-        return ["API 키가 설정되지 않아 사고사례 검색이 비활성화되었습니다."]
+    # ✅ 실행 버튼
+    run_multi_ai = st.button("복합 편차 AI 분석 실행")
 
-    try:
-        response = client.embeddings.create(
-            model="text-embedding-3-small",
-            input=query
-        )
-        query_vector = np.array(response.data[0].embedding).astype("float32").reshape(1, -1)
-        distances, indices = index.search(query_vector, k * 2)
+    # ✅ 핸드북 사고사례 전용 검색 함수
+    def search_handbook_accidents(index, chunks, query, k=5):
+        if client is None:
+            return ["API 키가 설정되지 않아 사고사례 검색이 비활성화되었습니다."]
 
-        results = []
-        for i in indices[0]:
-            if i < len(chunks):
-                content = chunks[i]
-                results.append(f"{content} (KOSHA 중소규모사업장_화재폭발사고_예방_핸드북)")
-        return results[:2]
+        try:
+            response = client.embeddings.create(
+                model="text-embedding-3-small",
+                input=query
+            )
+            query_vector = np.array(response.data[0].embedding).astype("float32").reshape(1, -1)
+            distances, indices = index.search(query_vector, k * 2)
 
-    except Exception as e:
-        return [f"사고사례 검색 중 오류 발생: {e}"]
+            results = []
+            for i in indices[0]:
+                if i < len(chunks):
+                    content = chunks[i]
+                    results.append(f"{content} (KOSHA 중소규모사업장_화재폭발사고_예방_핸드북)")
+            return results[:2]
+
+        except Exception as e:
+            return [f"사고사례 검색 중 오류 발생: {e}"]
     
-# ✅ 실행 시 분석 시작
-if run_multi_ai:
-    if len(selected_devs) < 2:
-        st.warning("⚠️ 최소 2개 이상의 편차를 선택하세요.")
+    # ✅ 실행 시 분석 시작
+    if run_multi_ai:
+        if len(selected_devs) < 2:
+            st.warning("최소 2개 이상의 편차를 선택하세요.")
 
-    elif is_invalid_combination(selected_devs, node_ai):
-        st.error("❌ 이는 물리적으로 불가능한 편차 조합입니다. 다시 선택해주세요.")
+        elif is_invalid_combination(selected_devs, node_ai):
+            st.error("이는 물리적으로 불가능한 편차 조합입니다. 다시 선택해주세요.")
 
-    else:
-        with st.spinner("AI 기반 복합 편차 HAZOP 분석 중..."):
-            query_text = ", ".join(selected_devs)
+        else:
+            with st.spinner("AI 기반 복합 편차 HAZOP 분석 중..."):
+                query_text = ", ".join(selected_devs)
 
-            # ✅ 1순위: 핸드북 사고사례 검색
-            handbook_results = search_handbook_accidents(handbook_index, handbook_chunks, query_text)
+                # ✅ 1순위: 핸드북 사고사례 검색
+                handbook_results = search_handbook_accidents(handbook_index, handbook_chunks, query_text)
 
-            if handbook_results and not handbook_results[0].startswith("API 키가 설정되지 않아"):
-                reference_data = "\n".join(handbook_results)
-                source_used = "핸드북 사고사례"
-            else:
-                guide_results = search_db(guide_index, guide_chunks, query_text)
-                law_results = search_db(law_index, law_chunks, query_text)
-                reference_data = "가이드:\n" + "\n".join(guide_results) + "\n\n법령:\n" + "\n".join(law_results)
-                source_used = "KOSHA Guide + 법령"
+                if handbook_results and not handbook_results[0].startswith("API 키가 설정되지 않아"):
+                    reference_data = "\n".join(handbook_results)
+                    source_used = "핸드북 사고사례"
+                else:
+                    guide_results = search_db(guide_index, guide_chunks, query_text)
+                    law_results = search_db(law_index, law_chunks, query_text)
+                    reference_data = "가이드:\n" + "\n".join(guide_results) + "\n\n법령:\n" + "\n".join(law_results)
+                    source_used = "KOSHA Guide + 법령"
 
-            prompt = f"""
+                prompt = f"""
 너는 산업안전 HAZOP 전문가야.
 
 Node: {node_ai}
 선택된 Deviation: {", ".join(selected_devs)}
 
-✅ 아래 형식으로 하나의 통합 분석 결과만 작성해줘 (한국어):
+아래 형식으로 하나의 통합 분석 결과만 작성해줘 (한국어):
 
 1. 원인
 - {source_used} 자료 기반 사고사례 또는 기술적 설명 반영
@@ -1113,27 +1126,27 @@ Node: {node_ai}
 - 아래 참고자료 기반으로 기술
 - 가능한 경우 KOSHA Guide 코드 표기 포함
 
-✅ 참고자료:
+참고자료:
 {reference_data}
 """
 
-            render_subsection("📄 AI 복합 편차 HAZOP 분석 결과")
+                render_subsection("AI 복합 편차 HAZOP 분석 결과")
 
-            try:
-                if client is None:
-                    st.error("현재 API 키를 읽지 못해 복합 편차 AI 분석을 실행할 수 없습니다.")
-                else:
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": "너는 산업안전 전문가이자 HAZOP 컨설턴트야."},
-                            {"role": "user", "content": prompt}
-                        ]
-                    )
-                    st.write(response.choices[0].message.content)
+                try:
+                    if client is None:
+                        st.error("현재 API 키를 읽지 못해 복합 편차 AI 분석을 실행할 수 없습니다.")
+                    else:
+                        response = client.chat.completions.create(
+                            model="gpt-4o",
+                            messages=[
+                                {"role": "system", "content": "너는 산업안전 전문가이자 HAZOP 컨설턴트야."},
+                                {"role": "user", "content": prompt}
+                            ]
+                        )
+                        st.write(response.choices[0].message.content)
 
-            except Exception as e:
-                st.error(f"복합 편차 AI 분석 중 오류가 발생했습니다: {e}")
+                except Exception as e:
+                    st.error(f"복합 편차 AI 분석 중 오류가 발생했습니다: {e}")
 
-else:
-    st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
+    else:
+        st.info("AI 복합 편차 HAZOP 분석 실행 버튼을 눌러주세요.")
