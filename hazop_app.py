@@ -446,6 +446,13 @@ div[data-testid="stNumberInput"] svg,
     background-color: var(--bg-card-alt) !important;
     color: var(--text-primary) !important;
 }
+/* text_input/text_area도 selectbox와 동일하게 흰 배경의 RootElement 래퍼가
+   따로 있어서, input/textarea 자체만 색을 바꿔도 테두리가 흰색으로 남는다. */
+div[data-testid="stTextInputRootElement"],
+div[data-testid="stTextAreaRootElement"] {
+    background-color: var(--bg-card-alt) !important;
+    border-color: var(--border) !important;
+}
 
 /* 드롭다운 펼침 목록은 body 하위 별도 레이어(포탈)로 렌더링되므로 전역 선택자로 처리 */
 div[role="listbox"], ul[role="listbox"],
@@ -482,6 +489,14 @@ div[data-testid="stExpander"] {
     border: 1px solid var(--border);
     border-radius: 10px;
     background-color: var(--bg-card);
+}
+/* Streamlit 기본 테마가 summary(확장영역 헤더 바)에 거의 흰색(rgb(250,250,250))
+   배경을 하드코딩해서 넣어놔서, hover 전에는 이 흰 배경이 그대로 보였다.
+   호버 여부와 상관없이 항상 다크 배경을 강제한다. */
+div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary:hover,
+div[data-testid="stExpander"] summary:focus {
+    background-color: var(--bg-card) !important;
 }
 div[data-testid="stExpander"] summary,
 div[data-testid="stExpander"] summary p,
