@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import faiss
@@ -280,6 +281,22 @@ st.sidebar.header("분석 설정")
 process_name = st.sidebar.text_input("대상 공정", value="에틸렌 저장탱크 공정")
 analysis_method = st.sidebar.text_input("분석 기법", value="HAZOP Lite")
 selected_node = st.sidebar.selectbox("단일 편차 분석 Node 선택", list(hazop_db.keys()), key="sidebar_node_select")
+
+# ✅ P&ID / Node 참고자료 — Node1·Node2가 실제로 어떤 설비를 가리키는지
+# 도면으로 바로 확인할 수 있도록 사이드바에 항상 노출
+with st.sidebar.expander("P&ID / Node 설명 보기", expanded=False):
+    st.image(
+        os.path.join(os.path.dirname(__file__), "images", "PID_ethylene_node1_2.png"),
+        caption="ETHYLENE SUPPLY SYSTEM P&ID (NODE 1 & 2)",
+        use_container_width=True,
+    )
+    st.markdown("""
+**NODE 1 (ET-01)** — 에틸렌 저장탱크 본체 및 충전 계통
+질소 블랭킷/PSV 라인, 레벨·온도·압력 계측(LT-101, TT-101, PT-101A 등), 탱크 하부 배출 라인을 포함. 이 앱의 **Node1**과 매칭됩니다.
+
+**NODE 2 (ET-02)** — 탱크 상부 배기/이송 계통
+증기라인 계측(PT-201A/B, FI-201), 비상차단밸브 ESDV-201, 후단 펌프 2대를 포함. 이 앱의 **Node2**와 매칭됩니다.
+""")
 # ✅ 세션 초기화
 if "data" not in st.session_state:
     st.session_state["data"] = []
@@ -321,15 +338,15 @@ st.markdown("""
     top: 0;
     z-index: 999;
     background: var(--bg-nav);
-    padding: 20px 26px;
+    padding: 12px 22px;
     border-radius: 10px;
-    margin-bottom: 22px;
+    margin-bottom: 12px;
     border-bottom: 3px solid var(--accent);
 }
 
 .header h1 {
     color: #ffffff;
-    font-size: 26px;
+    font-size: 21px;
     font-weight: 800;
     margin: 0;
     letter-spacing: -0.01em;
@@ -337,8 +354,8 @@ st.markdown("""
 
 .header p {
     color: var(--text-secondary);
-    font-size: 14px;
-    margin: 6px 0 0 0;
+    font-size: 13px;
+    margin: 3px 0 0 0;
 }
 </style>
 
@@ -351,21 +368,21 @@ st.markdown("""
 st.markdown("""
 <style>
 .block-container {
-    padding-top: 2rem;
+    padding-top: 1.2rem;
     max-width: 1200px;
 }
 
 section.main > div {
-    padding-top: 1rem;
+    padding-top: 0.4rem;
 }
 
 /* ── 카드 컨테이너 ─────────────────────────────── */
 .card {
     background-color: var(--bg-card);
-    padding: 20px 22px;
+    padding: 14px 18px;
     border-radius: 12px;
     border: 1px solid var(--border);
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     color: var(--text-primary);
 }
 
@@ -528,7 +545,7 @@ hr {
 }
 
 /* ── 모던 섹션 타이틀 (뉴스룸 필터탭 느낌의 뱃지 + 큰 제목) ──── */
-.section-title { margin: 2.4rem 0 1.2rem; }
+.section-title { margin: 0.6rem 0 0.9rem; }
 .section-title .eyebrow {
     display: inline-block;
     font-size: 12px;
@@ -536,13 +553,13 @@ hr {
     letter-spacing: 0.08em;
     color: var(--on-accent);
     background: var(--accent);
-    padding: 5px 14px;
+    padding: 4px 12px;
     border-radius: 6px;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 .section-title .title {
-    margin: 8px 0 0;
-    font-size: 26px;
+    margin: 6px 0 0;
+    font-size: 22px;
     font-weight: 800;
     color: var(--text-primary);
     letter-spacing: -0.01em;
@@ -550,11 +567,11 @@ hr {
 
 /* ── 서브섹션 타이틀 (카드 안쪽 소제목) ─────────── */
 .subsection-title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 14px;
-    padding-bottom: 9px;
+    margin: 0 0 10px;
+    padding-bottom: 7px;
     border-bottom: 2px solid var(--accent);
     display: block;
 }
@@ -563,7 +580,7 @@ hr {
     font-weight: 700;
     color: var(--text-secondary);
     letter-spacing: 0.02em;
-    margin: 0.4em 0 0.5em;
+    margin: 0.3em 0 0.4em;
 }
 
 /* ── 커스텀 상태 배너 (API 키 안내) ──────────────── */
@@ -595,14 +612,19 @@ div[data-testid="column"] {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 14px;
-    padding: 22px 24px;
+    padding: 16px 18px;
 }
-/* 중첩된 컬럼(예: 빈도·강도 기준표)은 톤을 살짝 낮춰서 이중 테두리 과함 방지 */
+/* 중첩된 컬럼(예: 빈도/강도 나란히 배치, 빈도·강도 기준표)은 톤을 살짝 낮추고
+   여백도 최소화해서 이중 테두리+과한 패딩으로 세로 공간을 잡아먹지 않게 함 */
 div[data-testid="column"] div[data-testid="column"] {
     background: var(--bg-card-alt);
     border: 1px solid var(--border);
-    padding: 16px 18px;
+    padding: 10px 12px;
 }
+
+/* stVerticalBlock(각 컬럼/컨테이너 내부 요소 간 기본 간격)이 기본값이 커서
+   위아래로 공간을 많이 잡아먹는 것을 줄임 */
+div[data-testid="stVerticalBlock"] { gap: 0.6rem !important; }
 
 /* 표(markdown table) 다크 대응 */
 .stApp table { color: var(--text-primary); border-color: var(--border); }
@@ -685,9 +707,12 @@ with tab1:
     <div class="fact-row safeguard"><div class="fact-label">현재 안전조치</div><div class="fact-value">{hazop_db[selected_node][selected_deviation]['현재 안전조치']}</div></div>
     """, unsafe_allow_html=True)
 
-        # ✅ 발생빈도 / 발생강도
-        freq = st.selectbox("발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_single")
-        sev = st.selectbox("발생강도 [1-4]", [1, 2, 3, 4], key="sev_single")
+        # ✅ 발생빈도 / 발생강도 (한 줄에 배치해 세로 공간 절약)
+        freq_sev_col1, freq_sev_col2 = st.columns(2)
+        with freq_sev_col1:
+            freq = st.selectbox("발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_single")
+        with freq_sev_col2:
+            sev = st.selectbox("발생강도 [1-4]", [1, 2, 3, 4], key="sev_single")
 
         # ✅ 위험도 계산
         risk_score = freq * sev
@@ -721,15 +746,13 @@ with tab1:
             unsafe_allow_html=True
         )
 
-        # ✅ 빈 줄
-        st.markdown(" ")
+        # ✅ 빈도/강도 기준 + 위험도 결정 기준 (기본은 접어서 세로 공간 절약)
+        with st.expander("빈도·강도 및 위험도 판정 기준 보기"):
+            freq_col, matrix_col = st.columns([3, 5])
 
-        # ✅ 빈도/강도 기준 + 위험도 결정 기준
-        freq_col, matrix_col = st.columns([3, 5])
-
-        with freq_col:
-            render_minor_title("빈도·강도 설정 기준")
-            st.markdown("""
+            with freq_col:
+                render_minor_title("빈도·강도 설정 기준")
+                st.markdown("""
 - **빈도 (1~5)**
 1 = 극히 드뭄
 2 = 드뭄
@@ -744,9 +767,9 @@ with tab1:
 4 = 치명적
 """)
 
-        with matrix_col:
-            render_minor_title("위험도 결정 기준")
-            st.markdown("""
+            with matrix_col:
+                render_minor_title("위험도 결정 기준")
+                st.markdown("""
 | 점수 범위 | 위험도 등급 | 허용 여부 | 조치 권고사항 |
 |-----------|-------------|-----------|----------------|
 | 16~20 | 매우 높음 | 허용 불가능 | 즉시 개선 / 작업 중단 |
@@ -756,7 +779,7 @@ with tab1:
 | 4~6 | 낮음 | 허용 가능 | 필요시 개선 |
 | 1~3 | 매우 낮음 | 허용 가능 | 개선 불요 또는 필요시 개선 |
 """)
-        
+
     # ✅ [오른쪽] – AI 개선 Safeguard & 개선 후 위험도
 
     # ✅ 사고사례가 존재하는 deviation 목록 및 사고사례 내용
@@ -872,7 +895,7 @@ Deviation: {deviation}
         manual_safeguard = st.text_area(
             "관리자 개선권고 입력",
             value="",
-            height=120,
+            height=80,
             placeholder="관리자가 최종 판단하여 개선권고사항을 직접 입력할 수 있습니다."
         )
 
@@ -948,8 +971,11 @@ Deviation: {deviation}
 
         render_subsection("개선 후 위험도 평가")
 
-        freq_after = st.selectbox("개선 후 발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_after_col2")
-        sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
+        freq_after_col1, freq_after_col2 = st.columns(2)
+        with freq_after_col1:
+            freq_after = st.selectbox("개선 후 발생빈도 [1-5]", [1, 2, 3, 4, 5], key="freq_after_col2")
+        with freq_after_col2:
+            sev_after = st.selectbox("개선 후 발생강도 [1-4]", [1, 2, 3, 4], key="sev_after_col2")
 
         risk_score_after = freq_after * sev_after
 
